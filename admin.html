@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ACCESORIOS HANNA</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https: blob:; connect-src 'self' https:; font-src 'self' https: data:;">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="admin-body">
+    <header class="admin-header">
+        <div class="logo">ACCESORIOS <span>HANNA</span> <span style="font-size:11px;color:#b59410;margin-left:8px;font-weight:400;">Admin</span></div>
+        <div class="admin-user">
+            <i class="fa-regular fa-user"></i>
+            <span id="admin-username">admin</span>
+            <a href="index.html" title="Ver tienda"><i class="fa-regular fa-store"></i> Tienda</a>
+            <button class="btn-logout" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="products" onclick="switchAdminTab('products')"><i class="fa-regular fa-clock"></i> Productos</button>
+            <button class="admin-tab" data-tab="banners" onclick="switchAdminTab('banners')"><i class="fa-regular fa-image"></i> Banners</button>
+            <button class="admin-tab" data-tab="menu" onclick="switchAdminTab('menu')"><i class="fa-solid fa-bars"></i> Menú</button>
+            <button class="admin-tab" data-tab="settings" onclick="switchAdminTab('settings')"><i class="fa-solid fa-gear"></i> Configuración</button>
+        </div>
+
+        <!-- ========== PRODUCTOS TAB ========== -->
+        <div id="tab-products" class="admin-tab-content active">
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <h4>Total Productos</h4>
+                    <div class="stat-value" id="stat-total">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Hombre</h4>
+                    <div class="stat-value" id="stat-men">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Mujer</h4>
+                    <div class="stat-value" id="stat-women">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Smart</h4>
+                    <div class="stat-value" id="stat-smart">0</div>
+                </div>
+            </div>
+
+            <div class="admin-toolbar">
+                <h2>Gestión de Productos</h2>
+                <button class="btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Nuevo Producto</button>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Marca</th>
+                            <th>SKU</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Antes</th>
+                            <th>Etiqueta</th>
+                            <th>Destacado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody"></tbody>
+                </table>
+                <div class="empty-state" id="empty-state">
+                    <i class="fa-regular fa-clock"></i>
+                    <p>No hay productos aún. ¡Crea tu primer producto!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== BANNERS TAB ========== -->
+        <div id="tab-banners" class="admin-tab-content">
+            <div class="admin-toolbar">
+                <h2>Banners del Carrusel</h2>
+                <button class="btn-primary" onclick="openBannerModal()"><i class="fa-solid fa-plus"></i> Nuevo Banner</button>
+            </div>
+
+            <div class="banner-grid" id="banner-grid"></div>
+            <div class="empty-state" id="banner-empty">
+                <i class="fa-regular fa-image"></i>
+                <p>No hay banners. ¡Crea el primero!</p>
+            </div>
+        </div>
+
+        <!-- ========== MENÚ TAB ========== -->
+        <div id="tab-menu" class="admin-tab-content">
+            <div class="admin-toolbar">
+                <h2>Menú de Navegación</h2>
+                <button class="btn-primary" onclick="saveMenuForm()"><i class="fa-solid fa-floppy-disk"></i> Guardar Menú</button>
+            </div>
+            <p style="color:#888;font-size:13px;margin-bottom:16px;">
+                Cada línea es un departamento. Las líneas con sangría (2 espacios) son categorías con subítems separados por coma.
+            </p>
+            <form onsubmit="saveMenuForm();return false;" style="max-width:700px;">
+                <div class="form-group">
+                    <textarea id="menu-editor" rows="20" style="font-family:monospace;font-size:13px;line-height:1.6;" placeholder="Hombre
+  Por Estilo: Clásicos, Deportivos, Casuales, Elegantes
+  Por Marca: Rolex, Omega, Seiko, Casio
+Mujer
+  Por Estilo: Clásicos, Elegantes, Deportivos
+  Por Marca: Cartier, Chanel, Fossil
+Inteligentes
+Lujo
+Marcas
+Rebajas"></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;"><i class="fa-solid fa-floppy-disk"></i> Guardar Menú</button>
+            </form>
+            <hr style="margin:32px 0;border:none;border-top:1px solid #eee;">
+            <h3 style="margin-bottom:16px;">Vista previa del menú</h3>
+            <nav class="main-nav" id="menu-preview-nav" style="position:relative;top:0;box-shadow:0 2px 8px rgba(0,0,0,0.1);border-radius:8px;"></nav>
+        </div>
+
+        <!-- ========== CONFIGURACIÓN TAB ========== -->
+        <div id="tab-settings" class="admin-tab-content">
+            <div class="admin-toolbar">
+                <h2>Configuración del Sitio</h2>
+                <button class="btn-primary" onclick="saveSettingsForm()"><i class="fa-solid fa-floppy-disk"></i> Guardar Todo</button>
+            </div>
+            <form onsubmit="saveSettingsForm();return false;" style="display:grid;gap:24px;max-width:700px;">
+                <div class="form-group">
+                    <label>Garantía (texto informativo)</label>
+                    <textarea id="set-warranty" rows="3" placeholder="Ej: 2 años de garantía internacional en todos nuestros relojes..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Medios de Pago (texto informativo)</label>
+                    <textarea id="set-payments" rows="3" placeholder="Ej: Aceptamos tarjetas de crédito, débito, transferencia bancaria..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Sobre Nosotros</label>
+                    <textarea id="set-about" rows="4" placeholder="Ej: ACCESORIOS HANNA es una marca de accesorios..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Programas (un enlace por línea: texto|url)</label>
+                    <textarea id="set-programs" rows="4" placeholder="Ej: Club Elite|#&#10;Programa de Amigos|#&#10;Estudiantes|#"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Colaboradores (un enlace por línea: texto|url)</label>
+                    <textarea id="set-collaborators" rows="4" placeholder="Ej: Influencers|#&#10;Afiliados|#"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Redes Sociales (una por línea: nombre|url)</label>
+                    <textarea id="set-social" rows="4" placeholder="Ej: facebook|https://facebook.com/hanna&#10;instagram|https://instagram.com/hanna&#10;youtube|https://youtube.com/@hanna&#10;tiktok|https://tiktok.com/@hanna&#10;pinterest|https://pinterest.com/hanna"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fin de la Oferta (fecha y hora del countdown)</label>
+                    <input type="datetime-local" id="set-offer-end" style="padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;">
+                    <span style="font-size:12px;color:#999;display:block;margin-top:4px;">Si está vacío, la oferta termina a las 23:59 de hoy.</span>
+                </div>
+                <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;"><i class="fa-solid fa-floppy-disk"></i> Guardar Configuración</button>
+            </form>
+        </div>
+    </main>
+
+    <!-- ========== PRODUCTO MODAL ========== -->
+    <div class="admin-modal-overlay" id="modalOverlay">
+        <div class="admin-modal">
+            <h3 id="modal-title">Nuevo Producto</h3>
+            <form onsubmit="saveProduct(event)">
+                <input type="hidden" id="product-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre del producto</label>
+                        <input type="text" id="product-name" required placeholder="Ej: Cronógrafo Clásico">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="product-brand" required placeholder="Ej: HANNA">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SKU (código de referencia)</label>
+                        <input type="text" id="product-sku" placeholder="Ej: REL-001" oninput="autoImageFromSku()">
+                    </div>
+                    <div class="form-group">
+                        <label>Imagen desde SKU</label>
+                        <span style="font-size:12px;color:#999;display:block;padding-top:8px;">images/<span id="sku-filename">sku</span>.jpg</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Precio ($)</label>
+                        <input type="number" id="product-price" required min="0" placeholder="196000">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio anterior ($) (opcional)</label>
+                        <input type="number" id="product-oldprice" min="0" placeholder="Dejar vacío si no aplica">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="product-category" required>
+                            <option value="men">Hombre</option>
+                            <option value="women">Mujer</option>
+                            <option value="smart">Smart</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Badge (etiqueta)</label>
+                        <select id="product-badge">
+                            <option value="">Sin etiqueta</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="-20%">-20%</option>
+                            <option value="-16%">-16%</option>
+                            <option value="-18%">-18%</option>
+                            <option value="-15%">-15%</option>
+                            <option value="Oferta">Oferta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label>Imagen del producto</label>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" id="product-image" placeholder="O pega una URL aquí..." style="flex:1;min-width:200px;" oninput="document.getElementById('product-image-data').value=this.value">
+                        <input type="hidden" id="product-image-data">
+                        <label class="btn-upload" style="padding:10px 16px;background:#f0f0f0;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Subir foto
+                            <input type="file" id="image-upload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
+                        </label>
+                    </div>
+                    <img id="image-preview" style="max-width:120px;max-height:120px;margin-top:10px;border-radius:8px;display:none;object-fit:cover;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Material</label>
+                        <input type="text" id="product-material" placeholder="Ej: Acero inoxidable">
+                    </div>
+                    <div class="form-group">
+                        <label>Movimiento</label>
+                        <input type="text" id="product-movement" placeholder="Ej: Cuarzo japonés">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Resistencia agua</label>
+                        <input type="text" id="product-water" placeholder="Ej: 50m">
+                    </div>
+                    <div class="form-group">
+                        <label>Garantía (años)</label>
+                        <input type="number" id="product-warranty" min="0" value="2" placeholder="2">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:8px;">
+                        <input type="checkbox" id="product-featured" style="width:18px;height:18px;">
+                        <label for="product-featured" style="margin:0;">Producto Destacado</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="modal-submit">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== BANNER MODAL ========== -->
+    <div class="admin-modal-overlay" id="bannerModalOverlay">
+        <div class="admin-modal">
+            <h3 id="banner-modal-title">Nuevo Banner</h3>
+            <form onsubmit="saveBanner(event)">
+                <input type="hidden" id="banner-id">
+                <div class="form-group">
+                    <label>Imagen</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" id="banner-image" placeholder="URL de imagen o sube una foto..." style="flex:1;min-width:180px;" oninput="updateBannerPreview()">
+                        <input type="hidden" id="banner-image-data">
+                        <label class="btn-upload" style="padding:10px 16px;background:#f0f0f0;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Subir foto
+                            <input type="file" id="banner-image-upload" accept="image/*" style="display:none;" onchange="handleBannerImageSelect(this)">
+                        </label>
+                    </div>
+                </div>
+                <img id="banner-preview" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:16px;display:none;">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="banner-title" placeholder="Ej: Nueva Colección 2026">
+                </div>
+                <div class="form-group">
+                    <label>Subtítulo</label>
+                    <input type="text" id="banner-subtitle" placeholder="Ej: Elegancia que Trasciende">
+                </div>
+                <div class="form-group">
+                    <label>Texto del botón</label>
+                    <input type="text" id="banner-cta" placeholder="Ej: Comprar Ahora">
+                </div>
+                <div class="form-group">
+                    <label>Enlace del botón</label>
+                    <input type="text" id="banner-link" placeholder="Ej: # o https://...">
+                </div>
+                <div class="form-group">
+                    <label>Color de fondo (gradient)</label>
+                    <input type="text" id="banner-bg" placeholder="Ej: linear-gradient(135deg, #1a1a2e, #16213e)">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeBannerModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="banner-modal-submit">Guardar Banner</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

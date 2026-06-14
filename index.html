@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACCESORIOS HANNA - Elegancia que Inspira</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https: blob:; connect-src 'self' https:; font-src 'self' https: data:;">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="top-bar-inner">
+        <span class="top-bar-promo">Envío gratis en pedidos mayores a $150.000</span>
+        <span class="top-bar-links">
+            <a href="#"><i class="fa-regular fa-bell"></i> Noticias</a>
+            <a href="#"><i class="fa-regular fa-circle-question"></i> Ayuda</a>
+            <a href="login.html"><i class="fa-regular fa-lock"></i> Admin</a>
+            <span class="lang-select"><i class="fa-regular fa-globe"></i> ES <i class="fa-solid fa-chevron-down"></i></span>
+        </span>
+    </div>
+</div>
+
+<header>
+    <div class="header-inner">
+        <div class="logo">ACCESORIOS <span>HANNA</span></div>
+        <form class="search-bar" onsubmit="handleSearch(event)">
+            <input type="text" id="searchInput" placeholder="Buscar relojes, marcas, colecciones...">
+            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
+        <div class="header-icons">
+            <a href="#"><i class="fa-regular fa-heart"></i></a>
+            <a href="#" class="cart-icon" onclick="toggleCart()">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span id="cart-count">0</span>
+            </a>
+            <a href="#"><i class="fa-regular fa-user"></i></a>
+        </div>
+    </div>
+</header>
+
+<nav class="main-nav">
+    <ul class="nav-list"></ul>
+</nav>
+
+<div class="coupon-banner" id="couponBanner">
+    <div class="coupon-inner">
+        <div class="coupon-left">
+            <span class="coupon-badge">OFERTA ESPECIAL</span>
+            <span class="coupon-code">Código: <strong>HANNA10</strong></span>
+        </div>
+        <div class="coupon-center">
+            <span>10% OFF en tu primera compra</span>
+            <span class="coupon-countdown">Oferta termina en: <span id="countdown-timer">--:--:--</span></span>
+        </div>
+        <a href="#" class="coupon-btn">Aprovechar Oferta</a>
+    </div>
+</div>
+
+<section class="hero-carousel" id="heroCarousel">
+    <div class="carousel-slides" id="carouselSlides"></div>
+    <div class="carousel-controls">
+        <button class="carousel-btn prev" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="carousel-btn next" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="carousel-dots" id="carouselDots"></div>
+</section>
+
+<section class="brands-section">
+    <div class="section-header">
+        <h2>Marcas Destacadas</h2>
+        <a href="#">Ver Todas <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="brands-scroll" id="brandsScroll">
+        <div class="brand-card" style="background: #f5f0eb;"><span>Rolex</span><i class="fa-regular fa-crown"></i></div>
+        <div class="brand-card" style="background: #e8f0f8;"><span>Omega</span><i class="fa-regular fa-circle"></i></div>
+        <div class="brand-card" style="background: #f0e8e8;"><span>Seiko</span><i class="fa-regular fa-star"></i></div>
+        <div class="brand-card" style="background: #e8f0e8;"><span>Casio</span><i class="fa-regular fa-clock"></i></div>
+        <div class="brand-card" style="background: #f8f0e8;"><span>Citizen</span><i class="fa-regular fa-sun"></i></div>
+        <div class="brand-card" style="background: #f0f0f8;"><span>Fossil</span><i class="fa-regular fa-heart"></i></div>
+        <div class="brand-card" style="background: #f8e8f0;"><span>Cartier</span><i class="fa-regular fa-gem"></i></div>
+        <div class="brand-card" style="background: #eef5e8;"><span>Tissot</span><i class="fa-regular fa-clock"></i></div>
+        <div class="brand-card" style="background: #f5e8e8;"><span>Tag Heuer</span><i class="fa-regular fa-shield"></i></div>
+        <div class="brand-card" style="background: #e8f5f0;"><span>Apple</span><i class="fa-regular fa-apple"></i></div>
+    </div>
+</section>
+
+<main class="container">
+    <div class="section-header">
+        <h2>Productos Destacados</h2>
+        <div class="product-tabs">
+            <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">Todos</button>
+            <button class="tab-btn" data-tab="featured" onclick="switchTab('featured')">Destacados</button>
+            <button class="tab-btn" data-tab="men" onclick="switchTab('men')">Hombre</button>
+            <button class="tab-btn" data-tab="women" onclick="switchTab('women')">Mujer</button>
+            <button class="tab-btn" data-tab="smart" onclick="switchTab('smart')">Smart</button>
+        </div>
+    </div>
+    <div id="results-info"></div>
+    <div class="products-grid" id="productsGrid">
+    </div>
+</main>
+
+<section class="promo-banner">
+    <div class="promo-inner">
+        <div class="promo-text">
+            <span class="promo-badge">Envío Gratis</span>
+            <h2>Recibe tu reloj en 24-48 hrs</h2>
+            <p>En pedidos superiores a $150.000. Paga con PayU de forma segura.</p>
+        </div>
+        <div class="promo-features">
+            <div class="promo-feature">
+                <i class="fa-regular fa-credit-card"></i>
+                <span>Pago Seguro</span>
+            </div>
+            <div class="promo-feature">
+                <i class="fa-regular fa-rotate-left"></i>
+                <span>30 Días de Garantía</span>
+            </div>
+            <div class="promo-feature">
+                <i class="fa-regular fa-truck"></i>
+                <span>Envío Rápido</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="newsletter-section">
+    <div class="newsletter-inner">
+        <div class="newsletter-text">
+            <h3>Suscríbete y obtén <strong>10% OFF</strong></h3>
+            <p>Recibe ofertas exclusivas, lanzamientos y novedades directamente en tu correo.</p>
+        </div>
+        <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+            <input type="email" placeholder="Tu correo electrónico" required>
+            <button type="submit">Suscribirme</button>
+        </form>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-main">
+        <div class="footer-col">
+            <h4>Ayuda</h4>
+            <a href="#">Seguimiento de Pedido</a>
+            <a href="#">Envíos y Entregas</a>
+            <a href="#">Devoluciones</a>
+            <a href="#">Contacto</a>
+            <a href="#">FAQ</a>
+        </div>
+        <div class="footer-col">
+            <h4>Programas</h4>
+            <div id="footer-programs"><a href="#">Club Elite</a><a href="#">Programa de Amigos</a><a href="#">Estudiantes</a></div>
+        </div>
+        <div class="footer-col">
+            <h4>Colaboraciones</h4>
+            <div id="footer-collaborators"><a href="#">Influencers</a><a href="#">Afiliados</a></div>
+        </div>
+        <div class="footer-col">
+            <h4>Mapa del Sitio</h4>
+            <a href="#">Categorías</a>
+            <a href="#">Marcas</a>
+            <a href="#">Colecciones</a>
+        </div>
+        <div class="footer-col">
+            <h4>Sobre Nosotros</h4>
+            <div id="footer-about"><a href="#">Quiénes Somos</a></div>
+        </div>
+    </div>
+    <div class="footer-social" id="footer-social">
+        <span>Síguenos:</span>
+    </div>
+    <div class="footer-bottom">
+        <span>Copyright &copy; 2026 ACCESORIOS HANNA. Todos los derechos reservados.</span>
+        <span class="footer-legal">
+            <a href="#">Términos</a>
+            <a href="#">Privacidad</a>
+            <a href="#">Cookies</a>
+        </span>
+    </div>
+</footer>
+
+<div id="cart-sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h3>Tu Carrito (<span id="cart-count-sidebar">0</span>)</h3>
+        <i class="fa-solid fa-xmark close-btn" onclick="toggleCart()"></i>
+    </div>
+    <div id="cart-items">
+        <p class="empty-msg">Tu carrito está vacío.</p>
+    </div>
+    <div class="sidebar-footer">
+        <div class="cart-summary">
+            <span>Subtotal</span>
+            <span id="cart-total">$0</span>
+        </div>
+        <button class="btn-checkout" onclick="checkout()">Finalizar Pedido <i class="fa-regular fa-file-lines"></i></button>
+    </div>
+</div>
+
+<div id="cart-overlay" class="overlay" onclick="toggleCart()"></div>
+
+<div class="modal-overlay" id="detail-overlay" onclick="if(event.target===this)closeDetail()">
+    <div class="detail-modal" id="detail-container"></div>
+</div>
+
+<div class="modal-overlay" id="checkout-overlay" onclick="if(event.target===this)closeCheckout()">
+    <div class="modal" style="max-width:550px;">
+        <h3>Finalizar Pedido</h3>
+        <form onsubmit="submitOrder(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nombre completo *</label>
+                    <input type="text" id="checkout-name" required placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label>Correo electrónico *</label>
+                    <input type="email" id="checkout-email" required placeholder="tucorreo@ejemplo.com">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Teléfono / WhatsApp *</label>
+                    <input type="tel" id="checkout-phone" required placeholder="3001234567">
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" id="checkout-city" placeholder="Bogotá">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Dirección de envío *</label>
+                <input type="text" id="checkout-address" required placeholder="Calle 123 #45-67">
+            </div>
+            <div class="form-group">
+                <label>Notas adicionales (opcional)</label>
+                <textarea id="checkout-notes" rows="2" placeholder="Ej: Dejar en portería, instrucciones especiales..."></textarea>
+            </div>
+            <div style="background:#f9f9f9;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;">
+                    <span>Productos (<span id="checkout-count">0</span>)</span>
+                    <span id="checkout-total">$0</span>
+                </div>
+                <div style="font-size:12px;color:#999;">Pago contra entrega (Efectivo / Transferencia / PayU)</div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeCheckout()">Cancelar</button>
+                <button type="submit" class="btn-primary" id="checkout-submit" style="flex:1;">
+                    <i class="fa-regular fa-file-lines"></i> Confirmar Pedido
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
