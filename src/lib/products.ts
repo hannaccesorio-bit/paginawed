@@ -23,7 +23,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-1', product_id: '1', url: '/products/watch-1.jpg', alt: 'Reloj Clásico Dorado', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-1', product_id: '1', url: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=533&fit=crop', alt: 'Reloj Clásico Dorado', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'hombre',
     brand_id: 'casio',
@@ -52,7 +52,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-2', product_id: '2', url: '/products/watch-2.jpg', alt: 'Reloj Deportivo Negro', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-2', product_id: '2', url: 'https://images.unsplash.com/photo-1557438159-51eec7a6c9e8?w=400&h=533&fit=crop', alt: 'Reloj Deportivo Negro', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'hombre',
     brand_id: 'nike',
@@ -81,7 +81,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-3', product_id: '3', url: '/products/watch-3.jpg', alt: 'Reloj Elegante Mujer', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-3', product_id: '3', url: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=400&h=533&fit=crop', alt: 'Reloj Elegante Mujer', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'mujer',
     brand_id: null,
@@ -110,7 +110,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-4', product_id: '4', url: '/products/chain-1.jpg', alt: 'Cadena de Acero Premium', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-4', product_id: '4', url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=533&fit=crop', alt: 'Cadena de Acero Premium', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'accesorios',
     brand_id: 'pandora',
@@ -139,7 +139,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-5', product_id: '5', url: '/products/bracelet-1.jpg', alt: 'Pulsera de Cuero Artesanal', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-5', product_id: '5', url: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=533&fit=crop', alt: 'Pulsera de Cuero Artesanal', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'accesorios',
     brand_id: null,
@@ -168,7 +168,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-6', product_id: '6', url: '/products/smartwatch-1.jpg', alt: 'Reloj Smart Watch', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-6', product_id: '6', url: 'https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=400&h=533&fit=crop', alt: 'Reloj Smart Watch', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'hombre',
     brand_id: 'samsung',
@@ -197,7 +197,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-7', product_id: '7', url: '/products/ring-1.jpg', alt: 'Anillo de Plata 925', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-7', product_id: '7', url: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=533&fit=crop', alt: 'Anillo de Plata 925', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'accesorios',
     brand_id: 'swarovski',
@@ -226,7 +226,7 @@ export const products: ProductType[] = [
     weight: null,
     dimensions: null,
     images: [
-      { id: 'img-8', product_id: '8', url: '/products/watch-4.jpg', alt: 'Reloj Mujer Rosa Gold', position: 0, created_at: new Date().toISOString() },
+      { id: 'img-8', product_id: '8', url: 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?w=400&h=533&fit=crop', alt: 'Reloj Mujer Rosa Gold', position: 0, created_at: new Date().toISOString() },
     ],
     category_id: 'mujer',
     brand_id: 'fossil',
