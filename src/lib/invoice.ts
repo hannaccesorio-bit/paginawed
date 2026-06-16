@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CartItem } from '@/types';
-import { formatPrice, formatPriceBS, EXCHANGE_RATE_BS } from '@/lib/utils';
+import { formatPrice, formatPriceBS, getExchangeRate } from '@/lib/utils';
 
 export interface CustomerData {
   name: string;
@@ -123,7 +123,8 @@ export function generateInvoicePDF(
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`TOTAL BS: ${formatPriceBS(total)}  (@ ${EXCHANGE_RATE_BS} BS/USD)`, 120, finalY + 35);
+  const rate = getExchangeRate();
+  doc.text(`TOTAL BS: ${formatPriceBS(total, rate)}  (@ ${rate} BS/USD)`, 120, finalY + 35);
 
   // Notes
   if (customer.notes) {

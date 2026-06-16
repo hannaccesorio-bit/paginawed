@@ -4,11 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/upload';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatPriceBS } from '@/lib/utils';
+import { useSettings } from '@/hooks/useSettings';
 import { Product, Department, Category, Banner } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Pencil, Trash2, Search, Package, DollarSign, ShoppingCart, TrendingUp, Upload, X, LogOut, Building2, FolderTree, Image, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, DollarSign, ShoppingCart, TrendingUp, Upload, X, LogOut, Building2, FolderTree, Image, RefreshCw } from 'lucide-react';
 
 type Tab = 'products' | 'departments' | 'categories' | 'banners';
 
@@ -20,6 +21,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('products');
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
+  const { exchangeRate, lastUpdated, setExchangeRate, fetchBCVRate } = useSettings();
+  const [manualRate, setManualRate] = useState(String(exchangeRate));
+  const [fetchingRate, setFetchingRate] = useState(false);
 
   // Data states
   const [products, setProducts] = useState<Product[]>([]);
@@ -47,6 +51,26 @@ export default function AdminPage() {
   useEffect(() => {
     if (user) loadAll();
   }, [user]);
+
+  useEffect(() => {
+    setManualRate(String(exchangeRate));
+  }, [exchangeRate]);
+
+  const handleFetchBCV = async () => {
+    setFetchingRate(true);
+    const ok = await fetchBCVRate();
+    setFetchingRate(false);
+    if (!ok) alert('No se pudo obtener la tasa del BCV. Intente manualmente.');
+  };
+
+  const handleSaveManualRate = () => {
+    const rate = parseFloat(manualRate);
+    if (rate > 0) {
+      setExchangeRate(rate);
+    } else {
+      alert('Ingrese una tasa valida');
+    }
+  };
 
   const loadAll = async () => {
     const [prods, deps, cats, bans] = await Promise.all([
@@ -278,6 +302,44 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-50 rounded-lg"><Image className="h-5 w-5 text-amber-600" /></div>
             <div><p className="text-sm text-neutral-500">Banners</p><p className="font-bold text-neutral-900">{stats.banners}</p></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Exchange Rate Panel */}
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-green-50 rounded-lg"><DollarSign className="h-5 w-5 text-green-600" /></div>
+            <div>
+              <p className="text-sm text-neutral-500">Tasa de Cambio BCV</p>
+              <div className="flex items-baseline gap-2">
+                <span className="font-bold text-xl text-neutral-900">1 USD = {exchangeRate} BS</span>
+                {lastUpdated && (
+                  <span className="text-xs text-neutral-400">
+                    Actualizada: {new Date(lastUpdated).toLocaleString('es-VE')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleFetchBCV} loading={fetchingRate}>
+              <RefreshCw className={`h-4 w-4 ${fetchingRate ? 'animate-spin' : ''}`} />
+              Obtener del BCV
+            </Button>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={manualRate}
+                onChange={e => setManualRate(e.target.value)}
+                step="0.01"
+                className="w-24 h-9 px-2 rounded-lg border border-neutral-300 text-sm text-right focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <Button size="sm" onClick={handleSaveManualRate}>
+                Guardar
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, FileText, MessageCircle, M
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useCart } from '@/hooks/useCart';
-import { formatPrice, formatPriceBS, EXCHANGE_RATE_BS } from '@/lib/utils';
+import { formatPrice, formatPriceBS, getExchangeRate } from '@/lib/utils';
 import { generateInvoicePDF, downloadPDF, generateWhatsAppMessage, generateWhatsAppURL, CustomerData } from '@/lib/invoice';
 
 export default function CartPage() {
@@ -28,6 +28,7 @@ export default function CartPage() {
   const totalItems = getTotalItems();
   const shipping = subtotal >= 50 ? 0 : 5;
   const total = subtotal + shipping;
+  const currentRate = getExchangeRate();
 
   const updateField = (field: keyof CustomerData, value: string) => {
     setCustomer(prev => ({ ...prev, [field]: value }));
@@ -250,7 +251,7 @@ export default function CartPage() {
                   <span>Total BS</span>
                   <span>{formatPriceBS(total)}</span>
                 </div>
-                <p className="text-xs text-neutral-400 mt-1">Tasa: 1 USD = {EXCHANGE_RATE_BS} BS</p>
+                <p className="text-xs text-neutral-400 mt-1">Tasa: 1 USD = {currentRate} BS</p>
               </div>
             </div>
 
