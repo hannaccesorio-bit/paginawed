@@ -11,11 +11,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
     const variants = {
-      primary: 'bg-primary text-white hover:bg-primary/90 active:bg-primary/95',
-      secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-      outline: 'border border-primary text-primary hover:bg-primary/5 active:bg-primary/10',
+      primary: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800',
+      secondary: 'bg-primary-100 text-primary-800 hover:bg-primary-200 active:bg-primary-300',
+      outline: 'border border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100',
       ghost: 'text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200',
-      danger: 'bg-destructive text-white hover:bg-destructive/90',
+      danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
     };
 
     const sizes = {
@@ -29,7 +29,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           'inline-flex items-center justify-center rounded-lg font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50',
           'disabled:opacity-50 disabled:pointer-events-none',
           variants[variant],
           sizes[size],
