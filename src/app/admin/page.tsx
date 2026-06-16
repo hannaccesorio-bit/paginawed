@@ -2,81 +2,81 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { products as initialProducts, formatPrice } from '@/lib/products';
+import { createClient } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/upload';
-import { Product } from '@/types';
+import { formatPrice } from '@/lib/utils';
+import { Product, Department, Category, Banner } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Pencil, Trash2, Search, Package, DollarSign, ShoppingCart, TrendingUp, Upload, X, LogOut, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, DollarSign, ShoppingCart, TrendingUp, Upload, X, LogOut, Building2, FolderTree, Image, ChevronLeft, ChevronRight } from 'lucide-react';
+
+type Tab = 'products' | 'departments' | 'categories' | 'banners';
 
 export default function AdminPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
-  const [productList, setProductList] = useState<Product[]>(initialProducts);
+  const supabase = createClient();
+
+  const [activeTab, setActiveTab] = useState<Tab>('products');
   const [search, setSearch] = useState('');
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Data states
+  const [products, setProducts] = useState<Product[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+
+  // Form states
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    compare_at_price: '',
-    category_id: 'hombre',
-    description: '',
-    sku: '',
-  });
+
+  // Forms
+  const [productForm, setProductForm] = useState({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false });
+  const [departmentForm, setDepartmentForm] = useState({ name: '', description: '' });
+  const [categoryForm, setCategoryForm] = useState({ name: '', description: '', department_id: '' });
+  const [bannerForm, setBannerForm] = useState({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#c2410c', text_color: '#ffffff' });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
+    if (!authLoading && !user) router.push('/login');
   }, [user, authLoading, router]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (user) loadAll();
+  }, [user]);
 
-  if (!user) return null;
-
-  const filteredProducts = productList.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const stats = {
-    totalProducts: productList.length,
-    totalValue: productList.reduce((sum, p) => sum + p.price, 0),
-    categories: [...new Set(productList.map(p => p.category_id))].length,
-    inStock: productList.filter(p => p.inventory_quantity > 0).length,
+  const loadAll = async () => {
+    const [prods, deps, cats, bans] = await Promise.all([
+      supabase.from('products').select('*').order('created_at', { ascending: false }),
+      supabase.from('departments').select('*').order('sort_order'),
+      supabase.from('categories').select('*').order('sort_order'),
+      supabase.from('banners').select('*').order('sort_order'),
+    ]);
+    if (prods.data) setProducts(prods.data as Product[]);
+    if (deps.data) setDepartments(deps.data as Department[]);
+    if (cats.data) setCategories(cats.data as Category[]);
+    if (bans.data) setBanners(bans.data as Banner[]);
   };
+
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" /></div>;
+  }
+  if (!user) return null;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
-    const newPreviews: string[] = [];
-    const newFiles: File[] = [];
-
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        newPreviews.push(ev.target?.result as string);
-        if (newPreviews.length === files.length) {
-          setPreviewImages(prev => [...prev, ...newPreviews]);
-        }
+        setPreviewImages(prev => [...prev, ev.target?.result as string]);
       };
       reader.readAsDataURL(file);
-      newFiles.push(file);
+      setPendingFiles(prev => [...prev, file]);
     });
-
-    setPendingFiles(prev => [...prev, ...newFiles]);
   };
 
   const removePreview = (index: number) => {
@@ -84,342 +84,555 @@ export default function AdminPage() {
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingItem(null);
+    setPreviewImages([]);
+    setPendingFiles([]);
+    setProductForm({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false });
+    setDepartmentForm({ name: '', description: '' });
+    setCategoryForm({ name: '', description: '', department_id: '' });
+    setBannerForm({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#c2410c', text_color: '#ffffff' });
+  };
+
+  const slugify = (text: string) => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  // ===================== PRODUCTS =====================
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-
     let uploadedUrls: string[] = [];
-
     if (pendingFiles.length > 0) {
       uploadedUrls = await uploadMultipleImages(pendingFiles);
     }
+    const existingImages = editingItem?.images || [];
+    const newImages = uploadedUrls.map((url, i) => ({ id: `img-${Date.now()}-${i}`, url, alt: productForm.name, position: i }));
+    const allImages = [...existingImages, ...newImages];
 
-    const existingImages = editingProduct?.images?.map(i => i.url) || [];
-    const allUrls = [...existingImages, ...uploadedUrls];
-
-    const images = allUrls.map((url, i) => ({
-      id: `img-${Date.now()}-${i}`,
-      product_id: editingProduct?.id || String(Date.now()),
-      url,
-      alt: formData.name,
-      position: i,
-      created_at: new Date().toISOString(),
-    }));
-
-    const newProduct: Product = {
-      id: editingProduct?.id || String(Date.now()),
-      slug: formData.name.toLowerCase().replace(/\s+/g, '-'),
-      name: formData.name,
-      description: formData.description,
-      short_description: formData.description.slice(0, 60),
-      price: Number(formData.price),
-      compare_at_price: formData.compare_at_price ? Number(formData.compare_at_price) : null,
-      cost_price: null,
-      sku: formData.sku || `SKU-${Date.now()}`,
-      barcode: null,
-      track_inventory: false,
-      inventory_quantity: 50,
-      allow_backorder: false,
-      weight: null,
-      dimensions: null,
-      images,
-      category_id: formData.category_id,
-      brand_id: null,
-      tags: [formData.category_id],
-      featured: false,
-      status: 'active',
-      seo_title: null,
-      seo_description: null,
-      created_at: editingProduct?.created_at || new Date().toISOString(),
+    const payload = {
+      name: productForm.name,
+      slug: slugify(productForm.name),
+      description: productForm.description,
+      short_description: productForm.description.slice(0, 60),
+      price: Number(productForm.price),
+      compare_at_price: productForm.compare_at_price ? Number(productForm.compare_at_price) : null,
+      sku: productForm.sku || `SKU-${Date.now()}`,
+      inventory_quantity: Number(productForm.inventory_quantity),
+      category_id: productForm.category_id || null,
+      department_id: productForm.department_id || null,
+      images: allImages,
+      featured: productForm.featured,
+      status: 'active' as const,
       updated_at: new Date().toISOString(),
     };
 
-    if (editingProduct) {
-      setProductList(list => list.map(p => p.id === editingProduct.id ? newProduct : p));
+    if (editingItem) {
+      await supabase.from('products').update(payload).eq('id', editingItem.id);
     } else {
-      setProductList(list => [...list, newProduct]);
+      await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() });
     }
-
     setUploading(false);
     resetForm();
+    loadAll();
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      price: String(product.price),
-      compare_at_price: product.compare_at_price ? String(product.compare_at_price) : '',
-      category_id: product.category_id,
-      description: product.description,
-      sku: product.sku,
-    });
-    setPreviewImages(product.images?.map(i => i.url).filter(Boolean) || []);
-    setPendingFiles([]);
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm('Eliminar este producto?')) return;
+    await supabase.from('products').delete().eq('id', id);
+    loadAll();
+  };
+
+  // ===================== DEPARTMENTS =====================
+  const handleSaveDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = { name: departmentForm.name, slug: slugify(departmentForm.name), description: departmentForm.description, updated_at: new Date().toISOString() };
+    if (editingItem) {
+      await supabase.from('departments').update(payload).eq('id', editingItem.id);
+    } else {
+      await supabase.from('departments').insert({ ...payload, active: true, sort_order: departments.length + 1, created_at: new Date().toISOString() });
+    }
+    resetForm();
+    loadAll();
+  };
+
+  const handleDeleteDepartment = async (id: string) => {
+    if (!confirm('Eliminar este departamento? Los productos asociados quedaran sin departamento.')) return;
+    await supabase.from('departments').delete().eq('id', id);
+    loadAll();
+  };
+
+  // ===================== CATEGORIES =====================
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = { name: categoryForm.name, slug: slugify(categoryForm.name), description: categoryForm.description, department_id: categoryForm.department_id || null, updated_at: new Date().toISOString() };
+    if (editingItem) {
+      await supabase.from('categories').update(payload).eq('id', editingItem.id);
+    } else {
+      await supabase.from('categories').insert({ ...payload, active: true, sort_order: categories.length + 1, created_at: new Date().toISOString() });
+    }
+    resetForm();
+    loadAll();
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('Eliminar esta categoria?')) return;
+    await supabase.from('categories').delete().eq('id', id);
+    loadAll();
+  };
+
+  // ===================== BANNERS =====================
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let imageUrl = editingItem?.image_url || '';
+    if (pendingFiles.length > 0) {
+      const urls = await uploadMultipleImages(pendingFiles);
+      if (urls.length > 0) imageUrl = urls[0];
+    }
+    const payload = { ...bannerForm, image_url: imageUrl, updated_at: new Date().toISOString() };
+    if (editingItem) {
+      await supabase.from('banners').update(payload).eq('id', editingItem.id);
+    } else {
+      await supabase.from('banners').insert({ ...payload, active: true, sort_order: banners.length + 1, created_at: new Date().toISOString() });
+    }
+    resetForm();
+    loadAll();
+  };
+
+  const handleDeleteBanner = async (id: string) => {
+    if (!confirm('Eliminar este banner?')) return;
+    await supabase.from('banners').delete().eq('id', id);
+    loadAll();
+  };
+
+  const openEdit = (item: any, tab: Tab) => {
+    setEditingItem(item);
+    if (tab === 'products') {
+      setProductForm({
+        name: item.name, price: String(item.price), compare_at_price: item.compare_at_price ? String(item.compare_at_price) : '',
+        category_id: item.category_id || '', department_id: item.department_id || '', description: item.description || '', sku: item.sku || '',
+        inventory_quantity: String(item.inventory_quantity || 0), featured: item.featured || false,
+      });
+      setPreviewImages(item.images?.map((i: any) => i.url) || []);
+    } else if (tab === 'departments') {
+      setDepartmentForm({ name: item.name, description: item.description || '' });
+    } else if (tab === 'categories') {
+      setCategoryForm({ name: item.name, description: item.description || '', department_id: item.department_id || '' });
+    } else if (tab === 'banners') {
+      setBannerForm({ title: item.title, subtitle: item.subtitle || '', link_url: item.link_url || '', button_text: item.button_text || 'Comprar Ahora', bg_color: item.bg_color || '#c2410c', text_color: item.text_color || '#ffffff' });
+      setPreviewImages(item.image_url ? [item.image_url] : []);
+    }
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Eliminar este producto?')) {
-      setProductList(list => list.filter(p => p.id !== id));
-    }
+  const stats = {
+    products: products.length,
+    departments: departments.length,
+    categories: categories.length,
+    banners: banners.length,
+    totalValue: products.reduce((sum, p) => sum + (p.price || 0), 0),
+    inStock: products.filter(p => (p.inventory_quantity || 0) > 0).length,
   };
 
-  const resetForm = () => {
-    setFormData({ name: '', price: '', compare_at_price: '', category_id: 'hombre', description: '', sku: '' });
-    setEditingProduct(null);
-    setPreviewImages([]);
-    setPendingFiles([]);
-    setShowForm(false);
-  };
+  const tabs: { id: Tab; label: string; icon: any }[] = [
+    { id: 'products', label: 'Productos', icon: Package },
+    { id: 'departments', label: 'Departamentos', icon: Building2 },
+    { id: 'categories', label: 'Categorias', icon: FolderTree },
+    { id: 'banners', label: 'Banners', icon: Image },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Panel de Administración</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Panel de Administracion</h1>
           <p className="text-neutral-500 text-sm mt-1">Bienvenido, {user.email}</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => { resetForm(); setShowForm(true); }}>
-            <Plus className="h-4 w-4" />
-            Nuevo Producto
-          </Button>
-          <Button variant="outline" onClick={signOut}>
-            <LogOut className="h-4 w-4" />
-            Salir
-          </Button>
-        </div>
+        <Button variant="outline" onClick={signOut}><LogOut className="h-4 w-4" /> Salir</Button>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-50 rounded-lg"><Package className="h-5 w-5 text-primary-600" /></div>
-            <div>
-              <p className="text-sm text-neutral-500">Productos</p>
-              <p className="font-bold text-neutral-900">{stats.totalProducts}</p>
-            </div>
+            <div><p className="text-sm text-neutral-500">Productos</p><p className="font-bold text-neutral-900">{stats.products}</p></div>
           </div>
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-50 rounded-lg"><DollarSign className="h-5 w-5 text-green-600" /></div>
-            <div>
-              <p className="text-sm text-neutral-500">Inventario</p>
-              <p className="font-bold text-neutral-900">{formatPrice(stats.totalValue)}</p>
-            </div>
+            <div><p className="text-sm text-neutral-500">Inventario</p><p className="font-bold text-neutral-900">{formatPrice(stats.totalValue)}</p></div>
           </div>
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg"><ShoppingCart className="h-5 w-5 text-blue-600" /></div>
-            <div>
-              <p className="text-sm text-neutral-500">Categorías</p>
-              <p className="font-bold text-neutral-900">{stats.categories}</p>
-            </div>
+            <div className="p-2 bg-blue-50 rounded-lg"><Building2 className="h-5 w-5 text-blue-600" /></div>
+            <div><p className="text-sm text-neutral-500">Depts / Cats</p><p className="font-bold text-neutral-900">{stats.departments} / {stats.categories}</p></div>
           </div>
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-50 rounded-lg"><TrendingUp className="h-5 w-5 text-amber-600" /></div>
-            <div>
-              <p className="text-sm text-neutral-500">En Stock</p>
-              <p className="font-bold text-neutral-900">{stats.inStock}</p>
-            </div>
+            <div className="p-2 bg-amber-50 rounded-lg"><Image className="h-5 w-5 text-amber-600" /></div>
+            <div><p className="text-sm text-neutral-500">Banners</p><p className="font-bold text-neutral-900">{stats.banners}</p></div>
           </div>
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 bg-neutral-100 p-1 rounded-xl mb-6">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); resetForm(); }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white shadow text-primary-600' : 'text-neutral-500 hover:text-neutral-700'}`}>
+            <tab.icon className="h-4 w-4" /> {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Action bar */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+          <input type="text" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full h-10 pl-10 pr-4 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <Button onClick={() => { resetForm(); setShowForm(true); }}><Plus className="h-4 w-4" />
+          {activeTab === 'products' && 'Nuevo Producto'}
+          {activeTab === 'departments' && 'Nuevo Departamento'}
+          {activeTab === 'categories' && 'Nueva Categoria'}
+          {activeTab === 'banners' && 'Nuevo Banner'}
+        </Button>
+      </div>
+
+      {/* ===================== MODAL FORM ===================== */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50" onClick={resetForm} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">
-              {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+              {editingItem ? 'Editar' : 'Nuevo'} {activeTab === 'products' && 'Producto'}
+              {activeTab === 'departments' && 'Departamento'}
+              {activeTab === 'categories' && 'Categoria'}
+              {activeTab === 'banners' && 'Banner'}
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nombre</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+            {/* PRODUCT FORM */}
+            {activeTab === 'products' && (
+              <form onSubmit={handleSaveProduct} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Precio</label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    required
-                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nombre</label>
+                  <input type="text" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} required
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Precio anterior</label>
-                  <input
-                    type="number"
-                    value={formData.compare_at_price}
-                    onChange={(e) => setFormData({ ...formData, compare_at_price: e.target.value })}
-                    placeholder="Opcional"
-                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">SKU</label>
-                <input
-                  type="text"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="Auto-generado si está vacío"
-                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Categoría</label>
-                <select
-                  value={formData.category_id}
-                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="hombre">Hombre</option>
-                  <option value="mujer">Mujer</option>
-                  <option value="accesorios">Accesorios</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Descripción</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Imágenes del Producto</label>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition-colors"
-                >
-                  <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
-                  <p className="text-sm text-neutral-500">Click para subir fotos</p>
-                  <p className="text-xs text-neutral-400 mt-1">JPG, PNG hasta 5MB cada una</p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-
-                {previewImages.length > 0 && (
-                  <div className="flex gap-3 mt-3 flex-wrap">
-                    {previewImages.map((img, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-neutral-200">
-                        <img src={img} alt={`Preview ${i}`} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removePreview(i)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Precio</label>
+                    <input type="number" value={productForm.price} onChange={e => setProductForm({ ...productForm, price: e.target.value })} required
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   </div>
-                )}
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Precio anterior</label>
+                    <input type="number" value={productForm.compare_at_price} onChange={e => setProductForm({ ...productForm, compare_at_price: e.target.value })} placeholder="Opcional"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">SKU</label>
+                    <input type="text" value={productForm.sku} onChange={e => setProductForm({ ...productForm, sku: e.target.value })} placeholder="Auto-generado"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Stock</label>
+                    <input type="number" value={productForm.inventory_quantity} onChange={e => setProductForm({ ...productForm, inventory_quantity: e.target.value })}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Departamento</label>
+                  <select value={productForm.department_id} onChange={e => setProductForm({ ...productForm, department_id: e.target.value })}
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="">Sin departamento</option>
+                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Categoria</label>
+                  <select value={productForm.category_id} onChange={e => setProductForm({ ...productForm, category_id: e.target.value })}
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="">Sin categoria</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Descripcion</label>
+                  <textarea value={productForm.description} onChange={e => setProductForm({ ...productForm, description: e.target.value })} rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="featured" checked={productForm.featured} onChange={e => setProductForm({ ...productForm, featured: e.target.checked })}
+                    className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500" />
+                  <label htmlFor="featured" className="text-sm text-neutral-700">Producto destacado</label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Imagenes</label>
+                  <div onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition-colors">
+                    <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                    <p className="text-sm text-neutral-500">Click para subir fotos</p>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} className="hidden" />
+                  {previewImages.length > 0 && (
+                    <div className="flex gap-3 mt-3 flex-wrap">
+                      {previewImages.map((img, i) => (
+                        <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-neutral-200">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => removePreview(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button variant="outline" type="button" onClick={resetForm}>Cancelar</Button>
+                  <Button type="submit" loading={uploading}>{editingItem ? 'Guardar' : 'Crear'}</Button>
+                </div>
+              </form>
+            )}
 
-              <div className="flex gap-3 justify-end pt-2">
-                <Button variant="outline" type="button" onClick={resetForm}>Cancelar</Button>
-                <Button type="submit" loading={uploading}>
-                  {uploading ? 'Subiendo...' : editingProduct ? 'Guardar' : 'Crear'}
-                </Button>
-              </div>
-            </form>
+            {/* DEPARTMENT FORM */}
+            {activeTab === 'departments' && (
+              <form onSubmit={handleSaveDepartment} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nombre</label>
+                  <input type="text" value={departmentForm.name} onChange={e => setDepartmentForm({ ...departmentForm, name: e.target.value })} required
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Descripcion</label>
+                  <textarea value={departmentForm.description} onChange={e => setDepartmentForm({ ...departmentForm, description: e.target.value })} rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button variant="outline" type="button" onClick={resetForm}>Cancelar</Button>
+                  <Button type="submit">{editingItem ? 'Guardar' : 'Crear'}</Button>
+                </div>
+              </form>
+            )}
+
+            {/* CATEGORY FORM */}
+            {activeTab === 'categories' && (
+              <form onSubmit={handleSaveCategory} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nombre</label>
+                  <input type="text" value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })} required
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Departamento padre</label>
+                  <select value={categoryForm.department_id} onChange={e => setCategoryForm({ ...categoryForm, department_id: e.target.value })}
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="">Sin departamento</option>
+                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Descripcion</label>
+                  <textarea value={categoryForm.description} onChange={e => setCategoryForm({ ...categoryForm, description: e.target.value })} rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button variant="outline" type="button" onClick={resetForm}>Cancelar</Button>
+                  <Button type="submit">{editingItem ? 'Guardar' : 'Crear'}</Button>
+                </div>
+              </form>
+            )}
+
+            {/* BANNER FORM */}
+            {activeTab === 'banners' && (
+              <form onSubmit={handleSaveBanner} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Titulo</label>
+                  <input type="text" value={bannerForm.title} onChange={e => setBannerForm({ ...bannerForm, title: e.target.value })} required
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Subtitulo</label>
+                  <input type="text" value={bannerForm.subtitle} onChange={e => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Imagen del banner</label>
+                  <div onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition-colors">
+                    <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                    <p className="text-sm text-neutral-500">Click para subir imagen (1200x500 recomendado)</p>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+                  {previewImages.length > 0 && (
+                    <div className="mt-3 relative rounded-lg overflow-hidden border border-neutral-200">
+                      <img src={previewImages[0]} alt="" className="w-full h-40 object-cover" />
+                      <button type="button" onClick={() => { setPreviewImages([]); setPendingFiles([]); }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"><X className="h-4 w-4" /></button>
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">URL de enlace</label>
+                    <input type="text" value={bannerForm.link_url} onChange={e => setBannerForm({ ...bannerForm, link_url: e.target.value })} placeholder="/catalogo"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Texto del boton</label>
+                    <input type="text" value={bannerForm.button_text} onChange={e => setBannerForm({ ...bannerForm, button_text: e.target.value })}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Color de fondo</label>
+                    <div className="flex gap-2">
+                      <input type="color" value={bannerForm.bg_color} onChange={e => setBannerForm({ ...bannerForm, bg_color: e.target.value })}
+                        className="h-10 w-10 rounded cursor-pointer" />
+                      <input type="text" value={bannerForm.bg_color} onChange={e => setBannerForm({ ...bannerForm, bg_color: e.target.value })}
+                        className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Color de texto</label>
+                    <div className="flex gap-2">
+                      <input type="color" value={bannerForm.text_color} onChange={e => setBannerForm({ ...bannerForm, text_color: e.target.value })}
+                        className="h-10 w-10 rounded cursor-pointer" />
+                      <input type="text" value={bannerForm.text_color} onChange={e => setBannerForm({ ...bannerForm, text_color: e.target.value })}
+                        className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button variant="outline" type="button" onClick={resetForm}>Cancelar</Button>
+                  <Button type="submit" loading={uploading}>{editingItem ? 'Guardar' : 'Crear'}</Button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-        <input
-          type="text"
-          placeholder="Buscar por nombre o SKU..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-        />
-      </div>
-
+      {/* ===================== TABLES ===================== */}
       <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-neutral-600">Producto</th>
-                <th className="text-left px-4 py-3 font-medium text-neutral-600">SKU</th>
-                <th className="text-left px-4 py-3 font-medium text-neutral-600">Categoría</th>
-                <th className="text-left px-4 py-3 font-medium text-neutral-600">Precio</th>
-                <th className="text-left px-4 py-3 font-medium text-neutral-600">Stock</th>
-                <th className="text-left px-4 py-3 font-medium text-neutral-600">Foto</th>
-                <th className="text-right px-4 py-3 font-medium text-neutral-600">Acciones</th>
+                {activeTab === 'products' && (<>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Producto</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">SKU</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Depto/Cat</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Precio</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Stock</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Foto</th>
+                  <th className="text-right px-4 py-3 font-medium text-neutral-600">Acciones</th>
+                </>)}
+                {activeTab === 'departments' && (<>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Nombre</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Slug</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Descripcion</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Estado</th>
+                  <th className="text-right px-4 py-3 font-medium text-neutral-600">Acciones</th>
+                </>)}
+                {activeTab === 'categories' && (<>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Nombre</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Slug</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Departamento</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Estado</th>
+                  <th className="text-right px-4 py-3 font-medium text-neutral-600">Acciones</th>
+                </>)}
+                {activeTab === 'banners' && (<>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Titulo</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Subtitulo</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Imagen</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Orden</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Estado</th>
+                  <th className="text-right px-4 py-3 font-medium text-neutral-600">Acciones</th>
+                </>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-neutral-50">
+              {/* PRODUCTS ROWS */}
+              {activeTab === 'products' && products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).map(p => (
+                <tr key={p.id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 font-medium text-neutral-900">{p.name}</td>
+                  <td className="px-4 py-3 text-neutral-500">{p.sku}</td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-neutral-900">{product.name}</p>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{product.sku}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant="secondary">{product.category_id}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="font-medium">{formatPrice(product.price)}</span>
-                    {product.compare_at_price && (
-                      <span className="ml-2 text-xs text-neutral-400 line-through">
-                        {formatPrice(product.compare_at_price)}
-                      </span>
-                    )}
+                    <Badge variant="secondary">{departments.find(d => d.id === p.department_id)?.name || '-'}</Badge>
+                    <Badge variant="secondary" className="ml-1">{categories.find(c => c.id === p.category_id)?.name || '-'}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={product.inventory_quantity > 0 ? 'success' : 'danger'}>
-                      {product.inventory_quantity}
-                    </Badge>
+                    <span className="font-medium">{formatPrice(p.price)}</span>
+                    {p.compare_at_price && <span className="ml-2 text-xs text-neutral-400 line-through">{formatPrice(p.compare_at_price)}</span>}
                   </td>
+                  <td className="px-4 py-3"><Badge variant={(p.inventory_quantity || 0) > 0 ? 'success' : 'danger'}>{p.inventory_quantity || 0}</Badge></td>
                   <td className="px-4 py-3">
-                    {product.images?.[0]?.url ? (
-                      <img src={product.images[0].url} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
-                        <Package className="h-4 w-4 text-neutral-400" />
-                      </div>
-                    )}
+                    {p.images?.[0]?.url ? <img src={p.images[0].url} alt="" className="w-10 h-10 rounded-lg object-cover" /> :
+                      <div className="w-10 h-10 bg-neutral-100 rounded-lg" />}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(product.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(p, 'products')}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {/* DEPARTMENT ROWS */}
+              {activeTab === 'departments' && departments.map(d => (
+                <tr key={d.id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 font-medium text-neutral-900">{d.name}</td>
+                  <td className="px-4 py-3 text-neutral-500">{d.slug}</td>
+                  <td className="px-4 py-3 text-neutral-500 max-w-xs truncate">{d.description || '-'}</td>
+                  <td className="px-4 py-3"><Badge variant={d.active ? 'success' : 'secondary'}>{d.active ? 'Activo' : 'Inactivo'}</Badge></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(d, 'departments')}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteDepartment(d.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {/* CATEGORY ROWS */}
+              {activeTab === 'categories' && categories.map(c => (
+                <tr key={c.id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 font-medium text-neutral-900">{c.name}</td>
+                  <td className="px-4 py-3 text-neutral-500">{c.slug}</td>
+                  <td className="px-4 py-3"><Badge variant="secondary">{departments.find(d => d.id === c.department_id)?.name || '-'}</Badge></td>
+                  <td className="px-4 py-3"><Badge variant={c.active ? 'success' : 'secondary'}>{c.active ? 'Activo' : 'Inactivo'}</Badge></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(c, 'categories')}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(c.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {/* BANNER ROWS */}
+              {activeTab === 'banners' && banners.map(b => (
+                <tr key={b.id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 font-medium text-neutral-900">{b.title}</td>
+                  <td className="px-4 py-3 text-neutral-500">{b.subtitle || '-'}</td>
+                  <td className="px-4 py-3">
+                    {b.image_url ? <img src={b.image_url} alt="" className="w-20 h-10 rounded object-cover" /> :
+                      <div className="w-20 h-10 bg-neutral-100 rounded" />}
+                  </td>
+                  <td className="px-4 py-3 text-neutral-500">{b.sort_order}</td>
+                  <td className="px-4 py-3"><Badge variant={b.active ? 'success' : 'secondary'}>{b.active ? 'Activo' : 'Inactivo'}</Badge></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(b, 'banners')}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteBanner(b.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                     </div>
                   </td>
                 </tr>

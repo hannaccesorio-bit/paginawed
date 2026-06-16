@@ -1,26 +1,49 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Heart, Minus, Plus, ArrowLeft, Truck, Shield, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { getProductById, formatPrice } from '@/lib/products';
+import { formatPrice } from '@/lib/utils';
+import { createClient } from '@/lib/supabase';
 import { useCart } from '@/hooks/useCart';
+import { Product } from '@/types';
 
 export default function ProductPage() {
   const params = useParams();
-  const product = getProductById(params.id as string);
+  const supabase = createClient();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const addItem = useCart((s) => s.addItem);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+
+  useEffect(() => {
+    loadProduct();
+  }, [params.id]);
+
+  const loadProduct = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('products').select('*').eq('id', params.id).single();
+    setProduct(data as Product | null);
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full mx-auto" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
         <h1 className="text-2xl font-bold text-neutral-900 mb-4">Producto no encontrado</h1>
         <Link href="/catalogo">
-          <Button>Volver al Catálogo</Button>
+          <Button>Volver al Catalogo</Button>
         </Link>
       </div>
     );
@@ -36,7 +59,7 @@ export default function ProductPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Link href="/catalogo" className="inline-flex items-center gap-2 text-neutral-600 hover:text-primary-600 mb-6">
         <ArrowLeft className="h-4 w-4" />
-        Volver al Catálogo
+        Volver al Catalogo
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">

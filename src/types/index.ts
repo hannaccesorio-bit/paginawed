@@ -17,6 +17,8 @@ export interface Product {
   images: ProductImage[];
   category_id: string;
   category?: Category;
+  department_id: string | null;
+  department?: Department;
   brand_id: string | null;
   brand?: Brand;
   tags: string[];
@@ -37,17 +39,44 @@ export interface ProductImage {
   created_at: string;
 }
 
+export interface Department {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image_url: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Category {
   id: string;
   name: string;
   slug: string;
   description: string | null;
   image_url: string | null;
-  parent_id: string | null;
-  children?: Category[];
-  position: number;
-  is_active: boolean;
+  department_id: string | null;
+  active: boolean;
+  sort_order: number;
   created_at: string;
+  updated_at: string;
+}
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  image_url: string;
+  link_url: string | null;
+  button_text: string;
+  bg_color: string;
+  text_color: string;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Brand {
