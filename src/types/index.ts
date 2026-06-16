@@ -15,6 +15,8 @@ export interface Product {
   weight: number | null;
   dimensions: ProductDimensions | null;
   images: ProductImage[];
+  sizes: string[];
+  colors: string[];
   category_id: string;
   category?: Category;
   department_id: string | null;

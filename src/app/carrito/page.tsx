@@ -1,17 +1,18 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, FileText, MessageCircle, Mail, Download, CheckCircle } from 'lucide-react';
+import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, FileText, MessageCircle, Mail, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useCart } from '@/hooks/useCart';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatPriceBS, EXCHANGE_RATE_BS } from '@/lib/utils';
 import { generateInvoicePDF, downloadPDF, generateWhatsAppMessage, generateWhatsAppURL, CustomerData } from '@/lib/invoice';
 
 export default function CartPage() {
   const items = useCart((s) => s.items);
   const removeItem = useCart((s) => s.removeItem);
   const updateQuantity = useCart((s) => s.updateQuantity);
+  const updateItemExtras = useCart((s) => s.updateItemExtras);
   const clearCart = useCart((s) => s.clearCart);
   const getSubtotal = useCart((s) => s.getSubtotal);
   const getTotalItems = useCart((s) => s.getTotalItems);
@@ -25,7 +26,7 @@ export default function CartPage() {
 
   const subtotal = getSubtotal();
   const totalItems = getTotalItems();
-  const shipping = subtotal >= 150000 ? 0 : 15000;
+  const shipping = subtotal >= 50 ? 0 : 5;
   const total = subtotal + shipping;
 
   const updateField = (field: keyof CustomerData, value: string) => {
@@ -36,27 +37,28 @@ export default function CartPage() {
     const num = `AH-${Date.now().toString().slice(-6)}`;
     setOrderNumber(num);
 
-    // Generate PDF
     const doc = generateInvoicePDF(items, customer, num, subtotal, shipping, total);
     downloadPDF(doc, num);
 
-    // Open WhatsApp
     const whatsappMsg = generateWhatsAppMessage(items, customer, num, total);
-    const whatsappURL = generateWhatsAppURL(whatsappMsg);
-    window.open(whatsappURL, '_blank');
+    window.open(generateWhatsAppURL(whatsappMsg), '_blank');
 
-    // Open email
     const emailSubject = encodeURIComponent(`Pedido #${num} - Accesorios Hanna`);
     const emailBody = encodeURIComponent(
       `Hola,\n\nAdjunto mi pedido #${num}.\n\n` +
-      `DATOS:\nNombre: ${customer.name}\nCedula: ${customer.cedula}\n` +
+      `DATOS:\nNombre: ${customer.name}\nCedula/RIF: ${customer.cedula}\n` +
       `Direccion: ${customer.address}, ${customer.city}\n` +
       `Telefono: ${customer.phone}\nEmail: ${customer.email}\n\n` +
-      `PRODUCTOS:\n${items.map(i => `- ${i.product.name} x${i.quantity} = ${formatPrice(i.product.price * i.quantity)}`).join('\n')}\n\n` +
-      `TOTAL: ${formatPrice(total)}\n\n` +
+      `PRODUCTOS:\n${items.map(i => {
+        let extras = '';
+        if ((i as any).selected_size) extras += ` [Talla: ${(i as any).selected_size}]`;
+        if ((i as any).selected_color) extras += ` [Color: ${(i as any).selected_color}]`;
+        return `- ${i.product.name}${extras} x${i.quantity} = ${formatPrice(i.product.price * i.quantity)}`;
+      }).join('\n')}\n\n` +
+      `TOTAL: ${formatPrice(total)} (${formatPriceBS(total)})\n\n` +
       `${customer.notes ? 'Notas: ' + customer.notes : ''}`
     );
-    window.open(`mailto:info@accesorioshanna.com?subject=${emailSubject}&body=${emailBody}`, '_blank');
+    window.open(`mailto:hannaccesorio@gmail.com?subject=${emailSubject}&body=${emailBody}`, '_blank');
 
     setOrderComplete(true);
   };
@@ -67,8 +69,7 @@ export default function CartPage() {
         <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-neutral-900 mb-2">Pedido #{orderNumber} Recibido!</h1>
         <p className="text-neutral-500 mb-2">Se descargo la factura PDF y se abrieron WhatsApp y correo.</p>
-        <p className="text-neutral-500 mb-6">Si no se abrieron automaticamente, revise su correo y WhatsApp.</p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex gap-3 justify-center mt-4">
           <Link href="/catalogo"><Button onClick={() => { clearCart(); setOrderComplete(false); }}>Seguir Comprando</Button></Link>
         </div>
       </div>
@@ -96,10 +97,11 @@ export default function CartPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => {
             const imageUrl = item.product.images?.[0]?.url || '';
+            const sizes = item.product.sizes || [];
+            const colors = item.product.colors || [];
             return (
               <div key={item.id} className="flex gap-4 p-4 bg-white border border-neutral-200 rounded-xl">
                 <div className="w-24 h-32 bg-neutral-100 rounded-lg overflow-hidden flex-shrink-0">
@@ -108,8 +110,40 @@ export default function CartPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-neutral-900 truncate">{item.product.name}</h3>
-                  <p className="font-bold text-neutral-900 mt-2">{formatPrice(item.product.price)}</p>
-                  <div className="flex items-center justify-between mt-4">
+                  <p className="font-bold text-neutral-900 mt-1">{formatPrice(item.product.price)}</p>
+                  <p className="text-xs text-neutral-400">{formatPriceBS(item.product.price)}</p>
+
+                  {/* Size selector */}
+                  {sizes.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-xs text-neutral-500 mr-2">Talla:</span>
+                      <div className="flex gap-1 flex-wrap">
+                        {sizes.map(s => (
+                          <button key={s} onClick={() => updateItemExtras(item.id, 'selected_size', s)}
+                            className={`px-2 py-0.5 text-xs rounded border ${(item as any).selected_size === s ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-neutral-300 text-neutral-600 hover:border-primary-400'}`}>
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Color selector */}
+                  {colors.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-xs text-neutral-500 mr-2">Color:</span>
+                      <div className="flex gap-1 flex-wrap">
+                        {colors.map(c => (
+                          <button key={c} onClick={() => updateItemExtras(item.id, 'selected_color', c)}
+                            className={`px-2 py-0.5 text-xs rounded border ${(item as any).selected_color === c ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-neutral-300 text-neutral-600 hover:border-primary-400'}`}>
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border border-neutral-300 rounded-lg">
                       <button onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))} className="p-2 hover:bg-neutral-50"><Minus className="h-3 w-3" /></button>
                       <span className="w-10 text-center text-sm font-medium">{item.quantity}</span>
@@ -123,7 +157,6 @@ export default function CartPage() {
             );
           })}
 
-          {/* Checkout Form */}
           {showCheckout && (
             <div className="bg-white border border-neutral-200 rounded-xl p-6 mt-6">
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Datos de Envio</h2>
@@ -135,7 +168,7 @@ export default function CartPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Cedula o RIF *</label>
-                  <input type="text" value={customer.cedula} onChange={e => updateField('cedula', e.target.value)} placeholder="Ej: 1234567890"
+                  <input type="text" value={customer.cedula} onChange={e => updateField('cedula', e.target.value)} placeholder="Ej: V-12345678"
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
@@ -145,22 +178,22 @@ export default function CartPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Telefono *</label>
-                  <input type="tel" value={customer.phone} onChange={e => updateField('phone', e.target.value)} placeholder="Ej: 300 123 4567"
+                  <input type="tel" value={customer.phone} onChange={e => updateField('phone', e.target.value)} placeholder="Ej: 0414 123 4567"
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Direccion *</label>
-                  <input type="text" value={customer.address} onChange={e => updateField('address', e.target.value)} placeholder="Calle, numero, barrio"
+                  <input type="text" value={customer.address} onChange={e => updateField('address', e.target.value)} placeholder="Av. Urdaneta, Caracas"
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Ciudad *</label>
-                  <input type="text" value={customer.city} onChange={e => updateField('city', e.target.value)} placeholder="Ej: Bogota"
+                  <input type="text" value={customer.city} onChange={e => updateField('city', e.target.value)} placeholder="Caracas"
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Departamento</label>
-                  <input type="text" value={customer.department} onChange={e => updateField('department', e.target.value)} placeholder="Ej: Cundinamarca"
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Estado / Municipio</label>
+                  <input type="text" value={customer.department} onChange={e => updateField('department', e.target.value)} placeholder="Miranda"
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
@@ -170,12 +203,12 @@ export default function CartPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Empresa de envio</label>
-                  <input type="text" value={customer.shipping_company} onChange={e => updateField('shipping_company', e.target.value)} placeholder="Ej: Servientrega, Interrapidisimo"
+                  <input type="text" value={customer.shipping_company} onChange={e => updateField('shipping_company', e.target.value)} placeholder="Ej: Zoom, MRW, Tealca"
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Notas del pedido</label>
-                  <textarea value={customer.notes} onChange={e => updateField('notes', e.target.value)} rows={2} placeholder="Instrucciones especiales, horarios, etc."
+                  <textarea value={customer.notes} onChange={e => updateField('notes', e.target.value)} rows={2} placeholder="Instrucciones especiales..."
                     className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               </div>
@@ -187,13 +220,12 @@ export default function CartPage() {
                 </Button>
               </div>
               <p className="text-xs text-neutral-400 text-center mt-3">
-                Se descargara la factura PDF, se abrira WhatsApp con el resumen y se enviara el correo a info@accesorioshanna.com
+                Se descargara la factura PDF, se abrira WhatsApp y se enviara el correo a hannaccesorio@gmail.com
               </p>
             </div>
           )}
         </div>
 
-        {/* Summary */}
         <div className="lg:col-span-1">
           <div className="bg-neutral-50 rounded-xl p-6 sticky top-24">
             <h2 className="font-semibold text-neutral-900 mb-4">Resumen del Pedido</h2>
@@ -207,11 +239,18 @@ export default function CartPage() {
                 <span>{shipping === 0 ? <Badge variant="success">Gratis</Badge> : formatPrice(shipping)}</span>
               </div>
               {shipping > 0 && (
-                <p className="text-xs text-primary-600">Envio gratis en compras superiores a {formatPrice(150000)}</p>
+                <p className="text-xs text-primary-600">Envio gratis en compras superiores a $50.00</p>
               )}
-              <div className="border-t border-neutral-200 pt-3 flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span className="text-primary-600">{formatPrice(total)}</span>
+              <div className="border-t border-neutral-200 pt-3">
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total USD</span>
+                  <span className="text-primary-600">{formatPrice(total)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-neutral-500 mt-1">
+                  <span>Total BS</span>
+                  <span>{formatPriceBS(total)}</span>
+                </div>
+                <p className="text-xs text-neutral-400 mt-1">Tasa: 1 USD = {EXCHANGE_RATE_BS} BS</p>
               </div>
             </div>
 
@@ -222,15 +261,9 @@ export default function CartPage() {
               </Button>
             ) : (
               <div className="mt-6 space-y-2">
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <FileText className="h-4 w-4" /> PDF se descargara
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <MessageCircle className="h-4 w-4" /> WhatsApp se abrira
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Mail className="h-4 w-4" /> Correo se enviara
-                </div>
+                <div className="flex items-center gap-2 text-sm text-green-600"><FileText className="h-4 w-4" /> PDF se descargara</div>
+                <div className="flex items-center gap-2 text-sm text-green-600"><MessageCircle className="h-4 w-4" /> WhatsApp se abrira</div>
+                <div className="flex items-center gap-2 text-sm text-green-600"><Mail className="h-4 w-4" /> Correo se enviara</div>
               </div>
             )}
 

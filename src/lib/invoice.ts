@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CartItem } from '@/types';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatPriceBS, EXCHANGE_RATE_BS } from '@/lib/utils';
 
 export interface CustomerData {
   name: string;
@@ -14,6 +14,8 @@ export interface CustomerData {
   company: string;
   shipping_company: string;
   notes: string;
+  selected_size?: string;
+  selected_color?: string;
 }
 
 export function generateInvoicePDF(
@@ -38,12 +40,12 @@ export function generateInvoicePDF(
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Tienda de Relojes y Accesorios', 14, 26);
-  doc.text('NIT: 000000000-0  |  info@accesorioshanna.com', 14, 32);
+  doc.text('hannaccesorio@gmail.com  |  Caracas, Venezuela', 14, 32);
 
   doc.setFontSize(11);
   doc.text(`Factura #${orderNumber}`, 150, 18);
-  doc.text(`Fecha: ${new Date().toLocaleDateString('es-CO')}`, 150, 26);
-  doc.text(`Hora: ${new Date().toLocaleTimeString('es-CO')}`, 150, 32);
+  doc.text(`Fecha: ${new Date().toLocaleDateString('es-VE')}`, 150, 26);
+  doc.text(`Hora: ${new Date().toLocaleTimeString('es-VE')}`, 150, 32);
 
   // Customer info
   doc.setTextColor(0, 0, 0);
@@ -59,7 +61,7 @@ export function generateInvoicePDF(
     `Email: ${customer.email}`,
     `Telefono: ${customer.phone}`,
     `Direccion: ${customer.address}`,
-    `Ciudad: ${customer.city} - ${customer.department}`,
+    `Ciudad: ${customer.city}${customer.department ? ' - ' + customer.department : ''}`,
   ];
   if (customer.company) customerLines.push(`Empresa: ${customer.company}`);
   if (customer.shipping_company) customerLines.push(`Envio: ${customer.shipping_company}`);
@@ -71,17 +73,22 @@ export function generateInvoicePDF(
   });
 
   // Table
-  const tableData = items.map(item => [
-    item.product.name,
-    item.product.sku || '-',
-    String(item.quantity),
-    formatPrice(item.product.price),
-    formatPrice(item.product.price * item.quantity),
-  ]);
+  const tableData = items.map(item => {
+    let extras = '';
+    if ((item as any).selected_size) extras += `Talla: ${(item as any).selected_size} `;
+    if ((item as any).selected_color) extras += `Color: ${(item as any).selected_color}`;
+    return [
+      item.product.name + (extras ? `\n${extras}` : ''),
+      item.product.sku || '-',
+      String(item.quantity),
+      formatPrice(item.product.price),
+      formatPrice(item.product.price * item.quantity),
+    ];
+  });
 
   autoTable(doc, {
     startY: y + 4,
-    head: [['Producto', 'SKU', 'Cant.', 'Precio', 'Subtotal']],
+    head: [['Producto', 'SKU', 'Cant.', 'Precio USD', 'Subtotal']],
     body: tableData,
     theme: 'grid',
     headStyles: { fillColor: [224, 101, 15], textColor: 255, fontSize: 9 },
@@ -111,22 +118,25 @@ export function generateInvoicePDF(
 
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL:', 120, finalY + 28);
+  doc.text('TOTAL USD:', 120, finalY + 28);
   doc.text(formatPrice(total), 165, finalY + 28, { align: 'right' });
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`TOTAL BS: ${formatPriceBS(total)}  (@ ${EXCHANGE_RATE_BS} BS/USD)`, 120, finalY + 35);
 
   // Notes
   if (customer.notes) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Notas:', 14, finalY + 40);
-    doc.text(customer.notes, 14, finalY + 46);
+    doc.text('Notas:', 14, finalY + 45);
+    doc.text(customer.notes, 14, finalY + 51);
   }
 
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(128, 128, 128);
   doc.text('Gracias por su compra en Accesorios Hanna', 105, 280, { align: 'center' });
-  doc.text('www.accesorioshanna.com  |  info@accesorioshanna.com  |  +57 300 000 0000', 105, 285, { align: 'center' });
+  doc.text('Av. Urdaneta, Caracas, Venezuela  |  hannaccesorio@gmail.com', 105, 285, { align: 'center' });
 
   return doc;
 }
@@ -147,10 +157,10 @@ export function generateWhatsAppMessage(
 ): string {
   let msg = `*NUEVO PEDIDO - Accesorios Hanna*\n`;
   msg += `Factura: #${orderNumber}\n`;
-  msg += `Fecha: ${new Date().toLocaleDateString('es-CO')}\n\n`;
+  msg += `Fecha: ${new Date().toLocaleDateString('es-VE')}\n\n`;
   msg += `*DATOS DEL CLIENTE*\n`;
   msg += `Nombre: ${customer.name}\n`;
-  msg += `Cedula: ${customer.cedula}\n`;
+  msg += `Cedula/RIF: ${customer.cedula}\n`;
   msg += `Email: ${customer.email}\n`;
   msg += `Telefono: ${customer.phone}\n`;
   msg += `Direccion: ${customer.address}, ${customer.city}\n`;
@@ -158,14 +168,17 @@ export function generateWhatsAppMessage(
   if (customer.shipping_company) msg += `Envio: ${customer.shipping_company}\n`;
   msg += `\n*PRODUCTOS*\n`;
   items.forEach(item => {
-    msg += `- ${item.product.name} x${item.quantity} = ${formatPrice(item.product.price * item.quantity)}\n`;
+    let extras = '';
+    if ((item as any).selected_size) extras += ` [Talla: ${(item as any).selected_size}]`;
+    if ((item as any).selected_color) extras += ` [Color: ${(item as any).selected_color}]`;
+    msg += `- ${item.product.name}${extras} x${item.quantity} = ${formatPrice(item.product.price * item.quantity)}\n`;
   });
-  msg += `\n*TOTAL: ${formatPrice(total)}*\n`;
+  msg += `\n*TOTAL: ${formatPrice(total)} (${formatPriceBS(total)})*\n`;
   if (customer.notes) msg += `\nNotas: ${customer.notes}\n`;
   return msg;
 }
 
 export function generateWhatsAppURL(message: string): string {
   const encoded = encodeURIComponent(message);
-  return `https://wa.me/573000000000?text=${encoded}`;
+  return `https://wa.me/5804140000000?text=${encoded}`;
 }

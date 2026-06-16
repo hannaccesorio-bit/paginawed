@@ -35,7 +35,7 @@ export default function AdminPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Forms
-  const [productForm, setProductForm] = useState({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false });
+  const [productForm, setProductForm] = useState({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false, sizes: '', colors: '' });
   const [departmentForm, setDepartmentForm] = useState({ name: '', description: '' });
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '', department_id: '' });
   const [bannerForm, setBannerForm] = useState({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#c2410c', text_color: '#ffffff' });
@@ -89,7 +89,7 @@ export default function AdminPage() {
     setEditingItem(null);
     setPreviewImages([]);
     setPendingFiles([]);
-    setProductForm({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false });
+    setProductForm({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false, sizes: '', colors: '' });
     setDepartmentForm({ name: '', description: '' });
     setCategoryForm({ name: '', description: '', department_id: '' });
     setBannerForm({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#c2410c', text_color: '#ffffff' });
@@ -121,6 +121,8 @@ export default function AdminPage() {
       category_id: productForm.category_id || null,
       department_id: productForm.department_id || null,
       images: allImages,
+      sizes: productForm.sizes ? productForm.sizes.split(',').map(s => s.trim()).filter(Boolean) : [],
+      colors: productForm.colors ? productForm.colors.split(',').map(c => c.trim()).filter(Boolean) : [],
       featured: productForm.featured,
       status: 'active' as const,
       updated_at: new Date().toISOString(),
@@ -211,6 +213,7 @@ export default function AdminPage() {
         name: item.name, price: String(item.price), compare_at_price: item.compare_at_price ? String(item.compare_at_price) : '',
         category_id: item.category_id || '', department_id: item.department_id || '', description: item.description || '', sku: item.sku || '',
         inventory_quantity: String(item.inventory_quantity || 0), featured: item.featured || false,
+        sizes: (item.sizes || []).join(', '), colors: (item.colors || []).join(', '),
       });
       setPreviewImages(item.images?.map((i: any) => i.url) || []);
     } else if (tab === 'departments') {
@@ -345,6 +348,18 @@ export default function AdminPage() {
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1.5">Stock</label>
                     <input type="number" value={productForm.inventory_quantity} onChange={e => setProductForm({ ...productForm, inventory_quantity: e.target.value })}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Tallas (separadas por coma)</label>
+                    <input type="text" value={productForm.sizes} onChange={e => setProductForm({ ...productForm, sizes: e.target.value })} placeholder="Ej: S, M, L, XL"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Colores (separados por coma)</label>
+                    <input type="text" value={productForm.colors} onChange={e => setProductForm({ ...productForm, colors: e.target.value })} placeholder="Ej: Negro, Dorado, Plata"
                       className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   </div>
                 </div>

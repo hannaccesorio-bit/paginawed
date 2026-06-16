@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS products (
   inventory_quantity integer DEFAULT 0,
   weight numeric(8,2),
   images jsonb DEFAULT '[]'::jsonb,
+  sizes text[] DEFAULT '{}',
+  colors text[] DEFAULT '{}',
   category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
   department_id uuid REFERENCES departments(id) ON DELETE SET NULL,
   tags text[] DEFAULT '{}',
