@@ -6,12 +6,13 @@ import { createClient } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/upload';
 import { formatPrice, formatPriceBS } from '@/lib/utils';
 import { useSettings } from '@/hooks/useSettings';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Product, Department, Category, Banner } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Pencil, Trash2, Search, Package, DollarSign, ShoppingCart, TrendingUp, Upload, X, LogOut, Building2, FolderTree, Image, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, DollarSign, Upload, X, LogOut, Building2, FolderTree, Image, RefreshCw, Settings, Phone, MapPin, Clock, Share2, Palette } from 'lucide-react';
 
-type Tab = 'products' | 'departments' | 'categories' | 'banners';
+type Tab = 'products' | 'departments' | 'categories' | 'banners' | 'settings';
 
 export default function AdminPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -24,6 +25,8 @@ export default function AdminPage() {
   const { exchangeRate, lastUpdated, setExchangeRate, fetchBCVRate } = useSettings();
   const [manualRate, setManualRate] = useState(String(exchangeRate));
   const [fetchingRate, setFetchingRate] = useState(false);
+  const { settings: siteSettings, updateSettings: updateSiteSettings } = useSiteSettings();
+  const [siteForm, setSiteForm] = useState(siteSettings);
 
   // Data states
   const [products, setProducts] = useState<Product[]>([]);
@@ -265,7 +268,13 @@ export default function AdminPage() {
     { id: 'departments', label: 'Departamentos', icon: Building2 },
     { id: 'categories', label: 'Categorias', icon: FolderTree },
     { id: 'banners', label: 'Banners', icon: Image },
+    { id: 'settings', label: 'Configuracion', icon: Settings },
   ];
+
+  const handleSaveSiteSettings = () => {
+    updateSiteSettings(siteForm);
+    alert('Configuracion guardada!');
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -718,6 +727,213 @@ export default function AdminPage() {
           </table>
         </div>
       </div>
+
+      {/* ===================== SETTINGS TAB ===================== */}
+      {activeTab === 'settings' && (
+        <div className="bg-white border border-neutral-200 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-neutral-900">Configuracion del Sitio</h2>
+            <Button onClick={handleSaveSiteSettings}>Guardar Cambios</Button>
+          </div>
+
+          {/* Contacto */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Phone className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Contacto</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Telefono Principal</label>
+                <input type="text" value={siteForm.phone1} onChange={e => setSiteForm({ ...siteForm, phone1: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Telefono Secundario</label>
+                <input type="text" value={siteForm.phone2} onChange={e => setSiteForm({ ...siteForm, phone2: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Correo Electronico</label>
+                <input type="email" value={siteForm.email} onChange={e => setSiteForm({ ...siteForm, email: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">WhatsApp</label>
+                <input type="text" value={siteForm.whatsapp} onChange={e => setSiteForm({ ...siteForm, whatsapp: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Ubicacion */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Ubicacion</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Direccion</label>
+                <input type="text" value={siteForm.address} onChange={e => setSiteForm({ ...siteForm, address: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Ciudad</label>
+                <input type="text" value={siteForm.city} onChange={e => setSiteForm({ ...siteForm, city: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Estado / Region</label>
+                <input type="text" value={siteForm.state} onChange={e => setSiteForm({ ...siteForm, state: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Pais</label>
+                <input type="text" value={siteForm.country} onChange={e => setSiteForm({ ...siteForm, country: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">URL de Google Maps (opcional)</label>
+                <input type="text" value={siteForm.mapUrl} onChange={e => setSiteForm({ ...siteForm, mapUrl: e.target.value })} placeholder="https://maps.google.com/..."
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Horarios */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Horarios de Atencion</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Lunes a Viernes</label>
+                <input type="text" value={siteForm.hoursWeek} onChange={e => setSiteForm({ ...siteForm, hoursWeek: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Sabado</label>
+                <input type="text" value={siteForm.hoursSaturday} onChange={e => setSiteForm({ ...siteForm, hoursSaturday: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Domingo</label>
+                <input type="text" value={siteForm.hoursSunday} onChange={e => setSiteForm({ ...siteForm, hoursSunday: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Redes Sociales */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Share2 className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Redes Sociales</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Facebook</label>
+                <input type="text" value={siteForm.facebook} onChange={e => setSiteForm({ ...siteForm, facebook: e.target.value })} placeholder="https://facebook.com/..."
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Instagram</label>
+                <input type="text" value={siteForm.instagram} onChange={e => setSiteForm({ ...siteForm, instagram: e.target.value })} placeholder="https://instagram.com/..."
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">TikTok</label>
+                <input type="text" value={siteForm.tiktok} onChange={e => setSiteForm({ ...siteForm, tiktok: e.target.value })} placeholder="https://tiktok.com/..."
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Twitter / X</label>
+                <input type="text" value={siteForm.twitter} onChange={e => setSiteForm({ ...siteForm, twitter: e.target.value })} placeholder="https://x.com/..."
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">YouTube</label>
+                <input type="text" value={siteForm.youtube} onChange={e => setSiteForm({ ...siteForm, youtube: e.target.value })} placeholder="https://youtube.com/..."
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Mision y Vision */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Mision y Vision</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Mision</label>
+                <textarea value={siteForm.mission} onChange={e => setSiteForm({ ...siteForm, mission: e.target.value })} rows={4}
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Vision</label>
+                <textarea value={siteForm.vision} onChange={e => setSiteForm({ ...siteForm, vision: e.target.value })} rows={4}
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Colores de Marca */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Palette className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Colores de Marca</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Color Primario</label>
+                <div className="flex gap-2">
+                  <input type="color" value={siteForm.primaryColor} onChange={e => setSiteForm({ ...siteForm, primaryColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
+                  <input type="text" value={siteForm.primaryColor} onChange={e => setSiteForm({ ...siteForm, primaryColor: e.target.value })}
+                    className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Color Secundario</label>
+                <div className="flex gap-2">
+                  <input type="color" value={siteForm.secondaryColor} onChange={e => setSiteForm({ ...siteForm, secondaryColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
+                  <input type="text" value={siteForm.secondaryColor} onChange={e => setSiteForm({ ...siteForm, secondaryColor: e.target.value })}
+                    className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Color de Acento</label>
+                <div className="flex gap-2">
+                  <input type="color" value={siteForm.accentColor} onChange={e => setSiteForm({ ...siteForm, accentColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
+                  <input type="text" value={siteForm.accentColor} onChange={e => setSiteForm({ ...siteForm, accentColor: e.target.value })}
+                    className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg border" style={{ backgroundColor: siteForm.primaryColor }} />
+                <span className="text-sm text-neutral-500">Primario</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg border" style={{ backgroundColor: siteForm.secondaryColor }} />
+                <span className="text-sm text-neutral-500">Secundario</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg border" style={{ backgroundColor: siteForm.accentColor }} />
+                <span className="text-sm text-neutral-500">Acento</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-neutral-200">
+            <Button onClick={handleSaveSiteSettings} size="lg">Guardar Todos los Cambios</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

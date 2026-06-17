@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export function Footer() {
+  const { settings } = useSiteSettings();
   return (
     <footer className="bg-neutral-900 text-neutral-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -12,8 +14,12 @@ export function Footer() {
               Tu tienda de confianza en relojes y accesorios de moda.
             </p>
             <div className="flex gap-4 mt-4">
-              <a href="#" className="hover:text-white transition-colors"><Instagram className="h-5 w-5" /></a>
-              <a href="#" className="hover:text-white transition-colors"><Facebook className="h-5 w-5" /></a>
+              {settings.instagram && (
+                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><Instagram className="h-5 w-5" /></a>
+              )}
+              {settings.facebook && (
+                <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><Facebook className="h-5 w-5" /></a>
+              )}
             </div>
           </div>
 
@@ -28,12 +34,11 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-medium mb-4">Ayuda</h4>
+            <h4 className="text-white font-medium mb-4">Horarios</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/faq" className="hover:text-white transition-colors">Preguntas Frecuentes</Link></li>
-              <li><Link href="/envios" className="hover:text-white transition-colors">Envios</Link></li>
-              <li><Link href="/devoluciones" className="hover:text-white transition-colors">Devoluciones</Link></li>
-              <li><Link href="/terminos" className="hover:text-white transition-colors">Terminos y Condiciones</Link></li>
+              <li>{settings.hoursWeek}</li>
+              <li>{settings.hoursSaturday}</li>
+              <li>{settings.hoursSunday}</li>
             </ul>
           </div>
 
@@ -42,15 +47,21 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span>hannaccesorio@gmail.com</span>
+                <span>{settings.email}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <span>+58 414 000 0000</span>
+                <span>{settings.phone1}</span>
               </li>
+              {settings.phone2 && (
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <span>{settings.phone2}</span>
+                </li>
+              )}
               <li className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                <span>Av. Urdaneta, Caracas, Venezuela</span>
+                <span>{settings.address}, {settings.city}</span>
               </li>
             </ul>
           </div>
