@@ -35,6 +35,13 @@ export interface SiteSettings {
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
+
+  // Banner Promo inferior
+  promoTitle: string;
+  promoSubtitle: string;
+  promoButtonText: string;
+  promoButtonLink: string;
+  promoBgColor: string;
 }
 
 interface SiteSettingsState {
@@ -65,6 +72,11 @@ const defaultSettings: SiteSettings = {
   primaryColor: '#e0650f',
   secondaryColor: '#1e40af',
   accentColor: '#166534',
+  promoTitle: 'Envio Gratis en Compras +$50.00',
+  promoSubtitle: 'Aprovecha nuestra promocion por tiempo limitado. Envio sin costo a toda Venezuela.',
+  promoButtonText: 'Comprar Ahora',
+  promoButtonLink: '/catalogo',
+  promoBgColor: '#e0650f',
 };
 
 export const useSiteSettings = create<SiteSettingsState>()(

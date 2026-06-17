@@ -929,6 +929,48 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* Banner Promo */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Image className="h-5 w-5 text-primary-600" />
+              <h3 className="font-semibold text-neutral-800">Banner Promo (Parte inferior de la Home)</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Titulo</label>
+                <input type="text" value={siteForm.promoTitle} onChange={e => setSiteForm({ ...siteForm, promoTitle: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Subtitulo</label>
+                <input type="text" value={siteForm.promoSubtitle} onChange={e => setSiteForm({ ...siteForm, promoSubtitle: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Texto del Boton</label>
+                <input type="text" value={siteForm.promoButtonText} onChange={e => setSiteForm({ ...siteForm, promoButtonText: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Link del Boton</label>
+                <input type="text" value={siteForm.promoButtonLink} onChange={e => setSiteForm({ ...siteForm, promoButtonLink: e.target.value })} placeholder="/catalogo"
+                  className="w-full h-10 px-3 rounded-lg border border-neutral-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Color de Fondo</label>
+                <div className="flex gap-2">
+                  <input type="color" value={siteForm.promoBgColor} onChange={e => setSiteForm({ ...siteForm, promoBgColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
+                  <input type="text" value={siteForm.promoBgColor} onChange={e => setSiteForm({ ...siteForm, promoBgColor: e.target.value })}
+                    className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-4 rounded-lg border border-neutral-200" style={{ backgroundColor: siteForm.promoBgColor }}>
+              <p className="text-white font-bold text-lg">{siteForm.promoTitle || 'Titulo del banner'}</p>
+              <p className="text-white/80 text-sm">{siteForm.promoSubtitle || 'Subtitulo del banner'}</p>
+            </div>
+          </div>
+
           <div className="flex justify-end pt-4 border-t border-neutral-200">
             <Button onClick={handleSaveSiteSettings} size="lg">Guardar Todos los Cambios</Button>
           </div>

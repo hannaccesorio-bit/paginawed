@@ -5,10 +5,12 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/product/ProductCard';
 import { createClient } from '@/lib/supabase';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Product, Banner, Department } from '@/types';
 
 export default function HomePage() {
   const supabase = createClient();
+  const { settings } = useSiteSettings();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -172,11 +174,11 @@ export default function HomePage() {
 
       {/* Promo Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-primary-600 rounded-2xl p-8 md:p-12 text-white">
+        <div className="rounded-2xl p-8 md:p-12 text-white" style={{ backgroundColor: settings.promoBgColor }}>
           <div className="max-w-xl">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Envio Gratis en Compras +$150.000</h2>
-            <p className="text-white/80 mb-6">Aprovecha nuestra promocion por tiempo limitado. Envio sin costo a toda Colombia.</p>
-            <Link href="/catalogo"><Button variant="secondary" size="lg">Comprar Ahora</Button></Link>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">{settings.promoTitle}</h2>
+            <p className="text-white/80 mb-6">{settings.promoSubtitle}</p>
+            <Link href={settings.promoButtonLink || '/catalogo'}><Button variant="secondary" size="lg">{settings.promoButtonText}</Button></Link>
           </div>
         </div>
       </section>
