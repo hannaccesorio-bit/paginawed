@@ -72,23 +72,50 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at timestamptz DEFAULT now()
 );
 
--- 5. Habilitar RLS pero permitir todo (para tienda interna)
+-- 5. Habilitar RLS
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
--- Policies: permitir todo (lectura y escritura) para usuarios autenticados
-CREATE POLICY "Allow all for authenticated" ON departments FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON categories FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON banners FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated" ON products FOR ALL USING (true);
+-- POLITICAS SEGURAS (actualizado):
+--   Lectura publica: cualquier visitante puede ver el catalogo.
+--   Escritura: SOLO los correos de la tabla admin_emails.
+--   (Antes era "Allow all for authenticated": cualquier usuario
+--    registrado podia borrar el catalogo. Corregido.)
+CREATE TABLE IF NOT EXISTS admin_emails (
+  email text PRIMARY KEY,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE admin_emails ENABLE ROW LEVEL SECURITY;
 
--- Policies: permitir lectura publica
-CREATE POLICY "Allow public read" ON departments FOR SELECT USING (true);
-CREATE POLICY "Allow public read" ON categories FOR SELECT USING (true);
-CREATE POLICY "Allow public read" ON banners FOR SELECT USING (true);
-CREATE POLICY "Allow public read" ON products FOR SELECT USING (true);
+-- >>> CAMBIA ESTE CORREO POR EL TUYO (el que usas en /login) <<<
+INSERT INTO admin_emails (email) VALUES ('hannaccesorio@gmail.com')
+ON CONFLICT (email) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM admin_emails
+    WHERE lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+$$;
+GRANT EXECUTE ON FUNCTION is_admin() TO anon, authenticated;
+
+DROP POLICY IF EXISTS "Allow all for authenticated" ON departments;
+DROP POLICY IF EXISTS "Allow all for authenticated" ON categories;
+DROP POLICY IF EXISTS "Allow all for authenticated" ON banners;
+DROP POLICY IF EXISTS "Allow all for authenticated" ON products;
+
+CREATE POLICY "Public read" ON departments FOR SELECT USING (true);
+CREATE POLICY "Admin write" ON departments FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Public read" ON categories FOR SELECT USING (true);
+CREATE POLICY "Admin write" ON categories FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Public read" ON banners FOR SELECT USING (true);
+CREATE POLICY "Admin write" ON banners FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Public read" ON products FOR SELECT USING (true);
+CREATE POLICY "Admin write" ON products FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- 6. Insertar departamentos por defecto
 INSERT INTO departments (name, slug, description, sort_order) VALUES
@@ -170,15 +197,18 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO storage.buckets (id, name, public) VALUES ('products', 'products', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 11. Storage policy: permitir upload a usuarios autenticados
-CREATE POLICY "Allow authenticated uploads" ON storage.objects
+-- 11. Storage policy: lectura publica de imagenes; subida y borrado SOLO admin
+DROP POLICY IF EXISTS "Allow authenticated uploads" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated delete" ON storage.objects;
+
+CREATE POLICY "Allow admin uploads" ON storage.objects
   FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'products');
+  WITH CHECK (bucket_id = 'products' AND is_admin());
 
 CREATE POLICY "Allow public read access" ON storage.objects
   FOR SELECT TO public
   USING (bucket_id = 'products');
 
-CREATE POLICY "Allow authenticated delete" ON storage.objects
+CREATE POLICY "Allow admin delete" ON storage.objects
   FOR DELETE TO authenticated
-  USING (bucket_id = 'products');
+  USING (bucket_id = 'products' AND is_admin());

@@ -15,7 +15,7 @@ import { Plus, Pencil, Trash2, Search, Package, DollarSign, Upload, X, LogOut, B
 type Tab = 'products' | 'departments' | 'categories' | 'banners' | 'settings';
 
 export default function AdminPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
   const router = useRouter();
   const supabase = createClient();
 
@@ -49,7 +49,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
-  }, [user, authLoading, router]);
+    // Solo el administrador autorizado puede entrar al panel
+    if (!authLoading && user && !isAdmin) router.push('/');
+  }, [user, authLoading, isAdmin, router]);
 
   useEffect(() => {
     if (user) loadAll();
@@ -91,7 +93,7 @@ export default function AdminPage() {
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" /></div>;
   }
-  if (!user) return null;
+  if (!user || !isAdmin) return null;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

@@ -17,7 +17,7 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const totalItems = useCart((s) => s.getTotalItems());
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
@@ -45,7 +45,7 @@ export function Header() {
               <Search className="h-5 w-5" />
             </Button>
 
-            {user ? (
+            {user && isAdmin ? (
               <>
                 <Link href="/admin">
                   <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
@@ -56,6 +56,10 @@ export function Header() {
                   <LogOut className="h-5 w-5" />
                 </Button>
               </>
+            ) : user ? (
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={signOut}>
+                <LogOut className="h-5 w-5" />
+              </Button>
             ) : (
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="hidden sm:inline-flex">

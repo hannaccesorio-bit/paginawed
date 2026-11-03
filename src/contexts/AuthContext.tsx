@@ -1,11 +1,13 @@
 'use client';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { createClient } from '@/lib/supabase';
+import { isAdminEmail } from '@/lib/admin';
 import type { User, AuthError } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
@@ -18,12 +20,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     try {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         setUser(data.user);
+        setIsAdmin(isAdminEmail(data.user?.email));
         setLoading(false);
       }).catch(() => {
         setLoading(false);
@@ -31,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user ?? null);
+        setIsAdmin(isAdminEmail(session?.user?.email));
         setLoading(false);
       });
 
@@ -65,8 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const supabase = createClient();
       await supabase.auth.signOut();
       setUser(null);
+      setIsAdmin(false);
     } catch {
       setUser(null);
+      setIsAdmin(false);
     }
   };
 
@@ -93,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signIn, signUp, signOut, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,9 +1,16 @@
+# dependencias
 node_modules/
+
+# builds
 .next/
-.env.local
-.env
-*.log
-.DS_Store
 out/
 .vercel
-.vercel
+
+# variables de entorno (NUNCA subir claves al repositorio)
+.env
+.env.*
+!.env.example
+
+# sistema y logs
+*.log
+.DS_Store

@@ -42,7 +42,7 @@ export default function CartPage() {
     downloadPDF(doc, num);
 
     const whatsappMsg = generateWhatsAppMessage(items, customer, num, total);
-    window.open(generateWhatsAppURL(whatsappMsg), '_blank');
+    window.open(generateWhatsAppURL(whatsappMsg), '_blank', 'noopener,noreferrer');
 
     const emailSubject = encodeURIComponent(`Pedido #${num} - Accesorios Hanna`);
     const emailBody = encodeURIComponent(
@@ -59,7 +59,7 @@ export default function CartPage() {
       `TOTAL: ${formatPrice(total)} (${formatPriceBS(total)})\n\n` +
       `${customer.notes ? 'Notas: ' + customer.notes : ''}`
     );
-    window.open(`mailto:hannaccesorio@gmail.com?subject=${emailSubject}&body=${emailBody}`, '_blank');
+    window.open(`mailto:hannaccesorio@gmail.com?subject=${emailSubject}&body=${emailBody}`, '_blank', 'noopener,noreferrer');
 
     setOrderComplete(true);
   };
