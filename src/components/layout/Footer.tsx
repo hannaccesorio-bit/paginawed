@@ -27,6 +27,8 @@ export function Footer() {
             <h4 className="text-white font-medium mb-4">Tienda</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/catalogo" className="hover:text-white transition-colors">Catalogo</Link></li>
+              <li><Link href="/favoritos" className="hover:text-white transition-colors">Mis Favoritos</Link></li>
+              <li><Link href="/pagos-envios" className="hover:text-white transition-colors">Pagos y Envios</Link></li>
               <li><Link href="/catalogo?department=hombre" className="hover:text-white transition-colors">Hombre</Link></li>
               <li><Link href="/catalogo?department=mujer" className="hover:text-white transition-colors">Mujer</Link></li>
               <li><Link href="/catalogo?department=accesorios" className="hover:text-white transition-colors">Accesorios</Link></li>

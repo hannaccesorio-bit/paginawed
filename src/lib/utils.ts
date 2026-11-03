@@ -44,6 +44,38 @@ export function slugify(text: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+/** Quita acentos y pasa a minusculas (para busquedas). */
+export function normalizeText(text: string) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/** Convierte un telefono venezolano escrito de cualquier forma a formato internacional (58...). */
+export function whatsappNumber(raw: string): string {
+  let digits = (raw || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0')) digits = '58' + digits.slice(1);
+  return digits;
+}
+
+/** Link de WhatsApp con mensaje precargado para pedir un producto. */
+export function buildProductWhatsAppURL(
+  productName: string,
+  price: number,
+  rawNumber: string,
+  productUrl?: string
+): string {
+  const num = whatsappNumber(rawNumber) || '5804140000000';
+  const msg =
+    `Hola Accesorios Hanna, me interesa este producto:\n` +
+    `*${productName}* - ${formatPrice(price)}\n` +
+    (productUrl ? `${productUrl}\n` : '') +
+    `¿Esta disponible?`;
+  return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+}
+
 export function generateId() {
   return Math.random().toString(36).substring(2, 15);
 }

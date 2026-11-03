@@ -132,3 +132,24 @@ de `package.json` sin que la tienda cambie en nada.
 | `next.config.mjs` | Cabeceras de seguridad HTTP |
 | `package.json` + `package-lock.json` | Dependencias actualizadas y sin CVEs |
 | `.gitignore`, `.env.example` | Protección de variables de entorno |
+
+---
+
+## Mejoras v2 - Funciones nuevas para vender mas (nov 2026)
+
+| # | Mejora | Donde |
+|---|---|---|
+| 1 | Favoritos reales: el corazoncito guarda productos en el dispositivo, pagina `/favoritos` y contador en el header | `src/hooks/useFavorites.ts`, `/favoritos`, `Header.tsx` |
+| 2 | Buscador en el catalogo (nombre, descripcion, etiquetas y SKU; ignora acentos) | `src/app/catalogo/content.tsx` |
+| 3 | Avisos de inventario: "Agotado" (bloquea compra) y "Ultimas unidades" (1-5) en tarjeta y ficha | `ProductCard.tsx`, `producto/[id]/content.tsx` |
+| 4 | Boton "Pedir por WhatsApp" en cada producto con mensaje precargado (usa el numero de Configuracion) | `ProductCard.tsx`, `producto/[id]/content.tsx`, `lib/utils.ts` |
+| 5 | SEO: metadata OpenGraph por producto (foto + nombre al compartir por WhatsApp), `sitemap.xml` y `robots.txt` | `producto/[id]/page.tsx`, `app/sitemap.ts`, `app/robots.ts` |
+| 6 | Pagina "Pagos y Envios" (Pago Movil, Zelle, Binance, Zoom/MRW/Tealca) enlazada en el footer | `/pagos-envios` |
+| 7 | Configuracion de la tienda en la nube: tabla `site_settings` (leer `supabase/site-settings.sql`); funciona igual aunque no se ejecute el SQL | `src/hooks/useSiteSettings.ts` |
+| 8 | "Tambien te puede gustar": productos relacionados por categoria en cada ficha | `producto/[id]/content.tsx` |
+| 9 | Panel: tarjeta "Agotados" y valor real del inventario (precio x unidades) | `src/app/admin/page.tsx` |
+| 10 | Limpieza: se retiro Stripe (no aplica en Venezuela) y se corrigio el filtro Hombre/Mujer/Accesorios del menu | `package.json`, `Header.tsx` |
+
+**Pendiente opcional:** ejecutar `supabase/site-settings.sql` en Supabase > SQL Editor para activar
+la configuracion en la nube (la tienda funciona igual sin ejecutarlo). En una proxima version:
+migrar a Next 16 y validar la tasa BCV con zod.

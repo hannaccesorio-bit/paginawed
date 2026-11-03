@@ -1,22 +1,24 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Search, Menu, X, User, LogOut, Shield } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, User, LogOut, Shield, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/hooks/useCart';
+import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navLinks = [
   { href: '/', label: 'Inicio' },
   { href: '/catalogo', label: 'Catálogo' },
-  { href: '/catalogo?category=hombre', label: 'Hombre' },
-  { href: '/catalogo?category=mujer', label: 'Mujer' },
-  { href: '/catalogo?category=accesorios', label: 'Accesorios' },
+  { href: '/catalogo?department=hombre', label: 'Hombre' },
+  { href: '/catalogo?department=mujer', label: 'Mujer' },
+  { href: '/catalogo?department=accesorios', label: 'Accesorios' },
 ];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const totalItems = useCart((s) => s.getTotalItems());
+  const favCount = useFavorites((s) => s.ids.length);
   const { user, isAdmin, signOut } = useAuth();
 
   return (
@@ -41,9 +43,22 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
-              <Search className="h-5 w-5" />
-            </Button>
+            <Link href="/catalogo" aria-label="Buscar en el catalogo">
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Search className="h-5 w-5" />
+              </Button>
+            </Link>
+
+            <Link href="/favoritos" aria-label="Mis favoritos">
+              <Button variant="ghost" size="sm" className="relative">
+                <Heart className={`h-5 w-5 ${favCount > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+                {favCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {favCount > 9 ? '9+' : favCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
 
             {user && isAdmin ? (
               <>

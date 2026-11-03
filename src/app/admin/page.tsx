@@ -261,8 +261,9 @@ export default function AdminPage() {
     departments: departments.length,
     categories: categories.length,
     banners: banners.length,
-    totalValue: products.reduce((sum, p) => sum + (p.price || 0), 0),
+    totalValue: products.reduce((sum, p) => sum + (p.price || 0) * Math.max(0, p.inventory_quantity || 0), 0),
     inStock: products.filter(p => (p.inventory_quantity || 0) > 0).length,
+    outOfStock: products.filter(p => (p.inventory_quantity || 0) <= 0).length,
   };
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
@@ -290,7 +291,7 @@ export default function AdminPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-50 rounded-lg"><Package className="h-5 w-5 text-primary-600" /></div>
@@ -300,7 +301,13 @@ export default function AdminPage() {
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-50 rounded-lg"><DollarSign className="h-5 w-5 text-green-600" /></div>
-            <div><p className="text-sm text-neutral-500">Inventario</p><p className="font-bold text-neutral-900">{formatPrice(stats.totalValue)}</p></div>
+            <div><p className="text-sm text-neutral-500">Valor Inventario</p><p className="font-bold text-neutral-900">{formatPrice(stats.totalValue)}</p></div>
+          </div>
+        </div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-50 rounded-lg"><Package className="h-5 w-5 text-amber-600" /></div>
+            <div><p className="text-sm text-neutral-500">Agotados</p><p className="font-bold text-neutral-900">{stats.outOfStock}</p></div>
           </div>
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
@@ -311,7 +318,7 @@ export default function AdminPage() {
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-50 rounded-lg"><Image className="h-5 w-5 text-amber-600" /></div>
+            <div className="p-2 bg-purple-50 rounded-lg"><Image className="h-5 w-5 text-purple-600" /></div>
             <div><p className="text-sm text-neutral-500">Banners</p><p className="font-bold text-neutral-900">{stats.banners}</p></div>
           </div>
         </div>
