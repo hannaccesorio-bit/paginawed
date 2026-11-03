@@ -19,30 +19,30 @@ export const useSettings = create<SettingsState>()(
       },
 
       fetchBCVRate: async () => {
+        // 1) A traves de nuestra propia API del servidor (sin CORS ni bloqueos)
         try {
-          const res = await fetch('https://pydolarve.org/api/v1/dollar', { cache: 'no-store' });
-          const data = await res.json();
-          if (data && data.dollar && data.dollar.price) {
-            const rate = parseFloat(data.dollar.price);
-            if (rate > 0) {
-              set({ exchangeRate: rate, lastUpdated: new Date().toISOString() });
+          const res = await fetch('/api/tasa-bcv', { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            const rate = Number(data?.rate);
+            if (data?.ok && rate > 0) {
+              set({ exchangeRate: rate, lastUpdated: data.updatedAt || new Date().toISOString() });
               return true;
             }
           }
         } catch {
-          // Intentar con otra API
-          try {
-            const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficiales', { cache: 'no-store' });
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-              const rate = parseFloat(data[0].promedio || data[0].venta);
-              if (rate > 0) {
-                set({ exchangeRate: rate, lastUpdated: new Date().toISOString() });
-                return true;
-              }
-            }
-          } catch {}
+          // Continuar con el respaldo directo
         }
+        // 2) Respaldo directo a dolarapi (ruta oficial corregida)
+        try {
+          const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { cache: 'no-store' });
+          const data = await res.json();
+          const rate = parseFloat(data.promedio ?? data.venta);
+          if (rate > 0) {
+            set({ exchangeRate: rate, lastUpdated: data.fechaActualizacion || new Date().toISOString() });
+            return true;
+          }
+        } catch {}
         return false;
       },
     }),

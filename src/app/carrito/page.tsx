@@ -5,7 +5,8 @@ import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, FileText, MessageCircle, M
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useCart } from '@/hooks/useCart';
-import { formatPrice, formatPriceBS, getExchangeRate } from '@/lib/utils';
+import { useSettings } from '@/hooks/useSettings';
+import { formatPrice, formatPriceBS } from '@/lib/utils';
 import { generateInvoicePDF, downloadPDF, generateWhatsAppMessage, generateWhatsAppURL, CustomerData } from '@/lib/invoice';
 
 export default function CartPage() {
@@ -28,7 +29,7 @@ export default function CartPage() {
   const totalItems = getTotalItems();
   const shipping = subtotal >= 50 ? 0 : 5;
   const total = subtotal + shipping;
-  const currentRate = getExchangeRate();
+  const { exchangeRate: currentRate } = useSettings();
 
   const updateField = (field: keyof CustomerData, value: string) => {
     setCustomer(prev => ({ ...prev, [field]: value }));
@@ -56,7 +57,7 @@ export default function CartPage() {
         if ((i as any).selected_color) extras += ` [Color: ${(i as any).selected_color}]`;
         return `- ${i.product.name}${extras} x${i.quantity} = ${formatPrice(i.product.price * i.quantity)}`;
       }).join('\n')}\n\n` +
-      `TOTAL: ${formatPrice(total)} (${formatPriceBS(total)})\n\n` +
+      `TOTAL: ${formatPrice(total)} (${formatPriceBS(total, currentRate)})\n\n` +
       `${customer.notes ? 'Notas: ' + customer.notes : ''}`
     );
     window.open(`mailto:hannaccesorio@gmail.com?subject=${emailSubject}&body=${emailBody}`, '_blank', 'noopener,noreferrer');
@@ -112,7 +113,7 @@ export default function CartPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-neutral-900 truncate">{item.product.name}</h3>
                   <p className="font-bold text-neutral-900 mt-1">{formatPrice(item.product.price)}</p>
-                  <p className="text-xs text-neutral-400">{formatPriceBS(item.product.price)}</p>
+                  <p className="text-xs text-neutral-400">{formatPriceBS(item.product.price, currentRate)}</p>
 
                   {/* Size selector */}
                   {sizes.length > 0 && (
@@ -249,7 +250,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-sm text-neutral-500 mt-1">
                   <span>Total BS</span>
-                  <span>{formatPriceBS(total)}</span>
+                  <span>{formatPriceBS(total, currentRate)}</span>
                 </div>
                 <p className="text-xs text-neutral-400 mt-1">Tasa: 1 USD = {currentRate} BS</p>
               </div>

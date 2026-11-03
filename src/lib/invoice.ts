@@ -174,7 +174,7 @@ export function generateWhatsAppMessage(
     if ((item as any).selected_color) extras += ` [Color: ${(item as any).selected_color}]`;
     msg += `- ${item.product.name}${extras} x${item.quantity} = ${formatPrice(item.product.price * item.quantity)}\n`;
   });
-  msg += `\n*TOTAL: ${formatPrice(total)} (${formatPriceBS(total)})*\n`;
+  msg += `\n*TOTAL: ${formatPrice(total)} (${formatPriceBS(total, getExchangeRate())})*\n`;
   if (customer.notes) msg += `\nNotas: ${customer.notes}\n`;
   return msg;
 }
