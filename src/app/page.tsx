@@ -65,9 +65,10 @@ export default function HomePage() {
             {banners.map((banner, i) => (
               <div key={banner.id}
                 className={`absolute inset-0 transition-opacity duration-700 ${i === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
-                <div className="w-full h-full relative">
+                <div className="w-full h-full relative" style={{ backgroundColor: banner.bg_color }}>
+                  {/* object-contain: la foto se ajusta completa al banner sin recortarse */}
                   <img src={banner.image_url} alt={banner.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       const t = e.target as HTMLImageElement;
                       t.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='500' fill='${encodeURIComponent(banner.bg_color)}'%3E%3Crect width='1200' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='48' fill='white' text-anchor='middle' dy='.3em'%3E${banner.title}%3C/text%3E%3C/svg%3E`;

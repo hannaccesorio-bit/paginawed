@@ -4,6 +4,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SiteSettingsCloudSync } from '@/hooks/useSiteSettings';
+import { ThemeColors } from '@/components/ThemeColors';
 import { useSettings } from '@/hooks/useSettings';
 
 const RATE_CHECK_KEY = 'bcv-rate-checked-at';
@@ -25,6 +26,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <SiteSettingsCloudSync />
+      <ThemeColors />
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">

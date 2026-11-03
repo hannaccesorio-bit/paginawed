@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Escala del color principal de la tienda (tripletas "r g b").
+   Por defecto: violeta suave #8b5cf6. El color elegido en /admin
+   reemplaza estas variables en vivo (ver src/components/ThemeColors.tsx). */
+:root {
+  --p-50: 246 242 254;
+  --p-100: 238 231 254;
+  --p-200: 223 209 252;
+  --p-300: 203 182 251;
+  --p-400: 180 149 249;
+  --p-500: 156 116 247;
+  --p-600: 139 92 246;
+  --p-700: 114 75 202;
+  --p-800: 95 63 167;
+  --p-900: 76 51 135;
+}
+
 @layer base {
   body {
     @apply bg-white text-neutral-900 antialiased;

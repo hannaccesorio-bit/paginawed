@@ -7,6 +7,7 @@ import { uploadMultipleImages } from '@/lib/upload';
 import { formatPrice, formatPriceBS } from '@/lib/utils';
 import { useSettings } from '@/hooks/useSettings';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { COLOR_PRESETS } from '@/lib/color';
 import { Product, Department, Category, Banner } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -45,7 +46,7 @@ export default function AdminPage() {
   const [productForm, setProductForm] = useState({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false, sizes: '', colors: '' });
   const [departmentForm, setDepartmentForm] = useState({ name: '', description: '' });
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '', department_id: '' });
-  const [bannerForm, setBannerForm] = useState({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#c2410c', text_color: '#ffffff' });
+  const [bannerForm, setBannerForm] = useState({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#8b5cf6', text_color: '#ffffff' });
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -121,7 +122,7 @@ export default function AdminPage() {
     setProductForm({ name: '', price: '', compare_at_price: '', category_id: '', department_id: '', description: '', sku: '', inventory_quantity: '50', featured: false, sizes: '', colors: '' });
     setDepartmentForm({ name: '', description: '' });
     setCategoryForm({ name: '', description: '', department_id: '' });
-    setBannerForm({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#c2410c', text_color: '#ffffff' });
+    setBannerForm({ title: '', subtitle: '', link_url: '', button_text: 'Comprar Ahora', bg_color: '#8b5cf6', text_color: '#ffffff' });
   };
 
   const slugify = (text: string) => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -250,7 +251,7 @@ export default function AdminPage() {
     } else if (tab === 'categories') {
       setCategoryForm({ name: item.name, description: item.description || '', department_id: item.department_id || '' });
     } else if (tab === 'banners') {
-      setBannerForm({ title: item.title, subtitle: item.subtitle || '', link_url: item.link_url || '', button_text: item.button_text || 'Comprar Ahora', bg_color: item.bg_color || '#c2410c', text_color: item.text_color || '#ffffff' });
+      setBannerForm({ title: item.title, subtitle: item.subtitle || '', link_url: item.link_url || '', button_text: item.button_text || 'Comprar Ahora', bg_color: item.bg_color || '#8b5cf6', text_color: item.text_color || '#ffffff' });
       setPreviewImages(item.image_url ? [item.image_url] : []);
     }
     setShowForm(true);
@@ -898,12 +899,22 @@ export default function AdminPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Color Primario</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Color Primario (toda la tienda)</label>
                 <div className="flex gap-2">
                   <input type="color" value={siteForm.primaryColor} onChange={e => setSiteForm({ ...siteForm, primaryColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
                   <input type="text" value={siteForm.primaryColor} onChange={e => setSiteForm({ ...siteForm, primaryColor: e.target.value })}
                     className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
                 </div>
+                {/* Colores predefinidos: un clic aplica el color y se guarda con la configuracion */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {COLOR_PRESETS.map(p => (
+                    <button key={p.hex} type="button" title={p.name} aria-label={p.name}
+                      onClick={() => setSiteForm({ ...siteForm, primaryColor: p.hex, promoBgColor: p.hex })}
+                      className={`w-8 h-8 rounded-full border border-neutral-200 hover:scale-110 transition-transform ${siteForm.primaryColor.toLowerCase() === p.hex ? 'ring-2 ring-offset-1 ring-neutral-800' : ''}`}
+                      style={{ backgroundColor: p.hex }} />
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-neutral-500">Un clic en un color lo aplica a botones, enlaces y al banner promo. Se guarda con &quot;Guardar Todos los Cambios&quot; y se mantiene para todos los visitantes.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Color Secundario</label>

@@ -72,14 +72,14 @@ const defaultSettings: SiteSettings = {
   youtube: '',
   mission: 'Ofrecer a nuestros clientes relojes y accesorios de la mas alta calidad, con un servicio al cliente excepcionales y precios competitivos.',
   vision: 'Ser la tienda de relojes y accesorios de referencia en Venezuela, reconocida por la calidad de nuestros productos y la satisfaccion de nuestros clientes.',
-  primaryColor: '#e0650f',
+  primaryColor: '#8b5cf6', // violeta suave
   secondaryColor: '#1e40af',
   accentColor: '#166534',
   promoTitle: 'Envio Gratis en Compras +$50.00',
   promoSubtitle: 'Aprovecha nuestra promocion por tiempo limitado. Envio sin costo a toda Venezuela.',
   promoButtonText: 'Comprar Ahora',
   promoButtonLink: '/catalogo',
-  promoBgColor: '#e0650f',
+  promoBgColor: '#8b5cf6',
 };
 
 export const SITE_SETTINGS_TABLE = 'site_settings';
