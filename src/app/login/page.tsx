@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +15,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  // Si la sesion se cerro automaticamente por inactividad, mostrar el motivo.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('logout-reason') === 'inactividad') {
+        setNotice('Tu sesion se cerro automaticamente por inactividad. Vuelve a iniciar sesion para continuar.');
+        sessionStorage.removeItem('logout-reason');
+      }
+    } catch {
+      /* almacenamiento no disponible */
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +53,12 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-neutral-200 p-6">
+          {notice && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3 mb-4">
+              {notice}
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
               {error}

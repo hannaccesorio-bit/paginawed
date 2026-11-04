@@ -84,6 +84,68 @@ const defaultSettings: SiteSettings = {
 
 export const SITE_SETTINGS_TABLE = 'site_settings';
 
+// ---------------------------------------------------------------------
+// Guardado en la nube
+// ---------------------------------------------------------------------
+
+/**
+ * Sube la configuracion a la nube (tabla site_settings) si hay una sesion
+ * de administrador. Devuelve el resultado real para poder mostrar un
+ * aviso en el panel si algo falla.
+ */
+export async function saveSettingsToCloud(
+  settings: SiteSettings
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    if (!data?.session?.user) return { ok: false, error: 'sin sesion de administrador' };
+    const { error } = await supabase
+      .from(SITE_SETTINGS_TABLE)
+      .upsert({ id: 1, data: settings, updated_at: new Date().toISOString() });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'error de conexion' };
+  }
+}
+
+// Debounce: mientras se arrastran los selectores de color se llama
+// updateSettings muchas veces; solo subimos a la nube 1.2 s despues
+// del ultimo cambio.
+let cloudSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingCloudSettings: SiteSettings | null = null;
+
+function scheduleCloudSave(settings: SiteSettings) {
+  pendingCloudSettings = settings;
+  if (cloudSaveTimer) return; // ya hay un guardado pendiente
+  cloudSaveTimer = setTimeout(() => {
+    cloudSaveTimer = null;
+    const s = pendingCloudSettings;
+    pendingCloudSettings = null;
+    if (s) void saveSettingsToCloud(s);
+  }, 1200);
+}
+
+/**
+ * Guarda inmediatamente en la nube (cancela cualquier guardado diferido
+ * pendiente) y devuelve el resultado. Lo usa el boton "Guardar" del panel.
+ */
+export async function saveSettingsNow(
+  settings: SiteSettings
+): Promise<{ ok: boolean; error?: string }> {
+  if (cloudSaveTimer) {
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = null;
+    pendingCloudSettings = null;
+  }
+  return saveSettingsToCloud(settings);
+}
+
+// ---------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------
+
 export const useSiteSettings = create<SiteSettingsState>()(
   persist(
     (set) => ({
@@ -91,25 +153,27 @@ export const useSiteSettings = create<SiteSettingsState>()(
       updateSettings: (partial) => {
         set((state) => {
           const merged = { ...state.settings, ...partial };
-          // Guardar tambien en la nube (si hay sesion de administrador y la
-          // tabla site_settings existe; si no, queda solo en este dispositivo).
-          (async () => {
-            try {
-              const supabase = createClient();
-              const { data } = await supabase.auth.getSession();
-              if (!data?.session?.user) return;
-              await supabase
-                .from(SITE_SETTINGS_TABLE)
-                .upsert({ id: 1, data: merged, updated_at: new Date().toISOString() });
-            } catch {
-              // sin sesion o tabla inexistente: se conserva solo lo local
-            }
-          })();
+          // Aplica al instante en toda la tienda y agenda el guardado en
+          // la nube (si hay sesion de administrador y la tabla existe).
+          scheduleCloudSave(merged);
           return { settings: merged };
         });
       },
     }),
-    { name: 'site-settings' }
+    {
+      name: 'site-settings',
+      version: 1,
+      migrate: (persisted) => {
+        // v0 -> v1: el naranja era el color automatico de la version
+        // anterior; pasa al nuevo violeta por defecto.
+        const p = persisted as { settings?: Partial<SiteSettings> } | undefined;
+        if (p?.settings) {
+          if (p.settings.primaryColor === '#e0650f') p.settings.primaryColor = '#8b5cf6';
+          if (p.settings.promoBgColor === '#e0650f') p.settings.promoBgColor = '#8b5cf6';
+        }
+        return persisted;
+      },
+    }
   )
 );
 

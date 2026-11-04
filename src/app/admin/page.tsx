@@ -6,8 +6,9 @@ import { createClient } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/upload';
 import { formatPrice, formatPriceBS } from '@/lib/utils';
 import { useSettings } from '@/hooks/useSettings';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { COLOR_PRESETS } from '@/lib/color';
+import { useSiteSettings, saveSettingsNow } from '@/hooks/useSiteSettings';
+import { COLOR_PRESETS, hexToTriplet } from '@/lib/color';
+import AdminSessionGuard from '@/components/AdminSessionGuard';
 import { Product, Department, Category, Banner } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -28,6 +29,8 @@ export default function AdminPage() {
   const [fetchingRate, setFetchingRate] = useState(false);
   const { settings: siteSettings, updateSettings: updateSiteSettings } = useSiteSettings();
   const [siteForm, setSiteForm] = useState(siteSettings);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'ok' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
 
   // Data states
   const [products, setProducts] = useState<Product[]>([]);
@@ -275,13 +278,41 @@ export default function AdminPage() {
     { id: 'settings', label: 'Configuracion', icon: Settings },
   ];
 
-  const handleSaveSiteSettings = () => {
-    updateSiteSettings(siteForm);
-    alert('Configuracion guardada!');
+  /** Aplica un color al instante en toda la tienda y agenda su guardado en la nube. */
+  const applyColorNow = (partial: Partial<{ primaryColor: string; promoBgColor: string }>) => {
+    const valid = Object.fromEntries(
+      Object.entries(partial).filter(([, v]) => v && hexToTriplet(v as string))
+    ) as Partial<{ primaryColor: string; promoBgColor: string }>;
+    if (Object.keys(valid).length > 0) updateSiteSettings(valid);
   };
+
+  const handleSaveSiteSettings = async () => {
+    setSaveStatus('saving');
+    setSaveError('');
+    updateSiteSettings(siteForm); // aplica al instante en esta tienda/navegador
+    const res = await saveSettingsNow(siteForm); // sube a la nube ahora mismo
+    if (res.ok) {
+      setSaveStatus('ok');
+      setTimeout(() => setSaveStatus('idle'), 4000);
+    } else {
+      setSaveStatus('error');
+      setSaveError(res.error || 'error desconocido');
+    }
+  };
+
+  const saveStatusNode = saveStatus === 'saving' ? (
+    <span className="text-sm text-neutral-500">Guardando...</span>
+  ) : saveStatus === 'ok' ? (
+    <span className="text-sm text-green-700">✓ Guardado en la nube</span>
+  ) : saveStatus === 'error' ? (
+    <span className="text-sm text-red-700">✗ Error al guardar: {saveError}</span>
+  ) : null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Proteccion de sesion: logout al salir del panel y por inactividad */}
+      <AdminSessionGuard />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -743,7 +774,10 @@ export default function AdminPage() {
         <div className="bg-white border border-neutral-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-neutral-900">Configuracion del Sitio</h2>
-            <Button onClick={handleSaveSiteSettings}>Guardar Cambios</Button>
+            <div className="flex items-center gap-3">
+              {saveStatusNode}
+              <Button onClick={() => void handleSaveSiteSettings()}>Guardar Cambios</Button>
+            </div>
           </div>
 
           {/* Contacto */}
@@ -901,20 +935,20 @@ export default function AdminPage() {
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Color Primario (toda la tienda)</label>
                 <div className="flex gap-2">
-                  <input type="color" value={siteForm.primaryColor} onChange={e => setSiteForm({ ...siteForm, primaryColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
-                  <input type="text" value={siteForm.primaryColor} onChange={e => setSiteForm({ ...siteForm, primaryColor: e.target.value })}
+                  <input type="color" value={siteForm.primaryColor} onChange={e => { setSiteForm({ ...siteForm, primaryColor: e.target.value }); applyColorNow({ primaryColor: e.target.value }); }} className="h-10 w-10 rounded cursor-pointer" />
+                  <input type="text" value={siteForm.primaryColor} onChange={e => { setSiteForm({ ...siteForm, primaryColor: e.target.value }); applyColorNow({ primaryColor: e.target.value }); }}
                     className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
                 </div>
-                {/* Colores predefinidos: un clic aplica el color y se guarda con la configuracion */}
+                {/* Colores predefinidos: un clic aplica el color al instante en toda la tienda */}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {COLOR_PRESETS.map(p => (
                     <button key={p.hex} type="button" title={p.name} aria-label={p.name}
-                      onClick={() => setSiteForm({ ...siteForm, primaryColor: p.hex, promoBgColor: p.hex })}
+                      onClick={() => { setSiteForm(f => ({ ...f, primaryColor: p.hex, promoBgColor: p.hex })); applyColorNow({ primaryColor: p.hex, promoBgColor: p.hex }); }}
                       className={`w-8 h-8 rounded-full border border-neutral-200 hover:scale-110 transition-transform ${siteForm.primaryColor.toLowerCase() === p.hex ? 'ring-2 ring-offset-1 ring-neutral-800' : ''}`}
                       style={{ backgroundColor: p.hex }} />
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-neutral-500">Un clic en un color lo aplica a botones, enlaces y al banner promo. Se guarda con &quot;Guardar Todos los Cambios&quot; y se mantiene para todos los visitantes.</p>
+                <p className="mt-2 text-xs text-neutral-500">Un clic en un color lo aplica inmediatamente a botones, enlaces y al banner promo, y queda guardado automaticamente para todos los visitantes.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Color Secundario</label>
@@ -979,8 +1013,8 @@ export default function AdminPage() {
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Color de Fondo</label>
                 <div className="flex gap-2">
-                  <input type="color" value={siteForm.promoBgColor} onChange={e => setSiteForm({ ...siteForm, promoBgColor: e.target.value })} className="h-10 w-10 rounded cursor-pointer" />
-                  <input type="text" value={siteForm.promoBgColor} onChange={e => setSiteForm({ ...siteForm, promoBgColor: e.target.value })}
+                  <input type="color" value={siteForm.promoBgColor} onChange={e => { setSiteForm({ ...siteForm, promoBgColor: e.target.value }); applyColorNow({ promoBgColor: e.target.value }); }} className="h-10 w-10 rounded cursor-pointer" />
+                  <input type="text" value={siteForm.promoBgColor} onChange={e => { setSiteForm({ ...siteForm, promoBgColor: e.target.value }); applyColorNow({ promoBgColor: e.target.value }); }}
                     className="flex-1 h-10 px-3 rounded-lg border border-neutral-300 text-sm" />
                 </div>
               </div>
@@ -991,8 +1025,9 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-neutral-200">
-            <Button onClick={handleSaveSiteSettings} size="lg">Guardar Todos los Cambios</Button>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200">
+            {saveStatusNode}
+            <Button onClick={() => void handleSaveSiteSettings()} size="lg">Guardar Todos los Cambios</Button>
           </div>
         </div>
       )}
